@@ -79,6 +79,13 @@ func TestSubstituteEnvs(t *testing.T) {
 			allowedEnvs: []string{"EMPTY_VAR_VALUE"},
 			expected:    "Hello !",
 		},
+
+		{
+			name:        "Should ignore special forms: like $(var)",
+			text:        "Hello $(FOO) $((BAR)) $-FOO $ BAR!",
+			allowedEnvs: []string{"FOO", "BAR"},
+			expected:    "Hello $(FOO) $((BAR)) $-FOO $ BAR!",
+		},
 	}
 
 	for _, test := range tests {
