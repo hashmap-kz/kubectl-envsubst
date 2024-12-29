@@ -9,6 +9,7 @@ func TestSubstituteEnvs(t *testing.T) {
 	// Set environment variables for testing
 	_ = os.Setenv("FOO", "foo_value")
 	_ = os.Setenv("BAR", "bar_value")
+	_ = os.Setenv("EMPTY_VAR_VALUE", "")
 
 	tests := []struct {
 		name        string
@@ -63,6 +64,20 @@ func TestSubstituteEnvs(t *testing.T) {
 			text:        "Hello ${FOO} and $BAZ!",
 			allowedEnvs: []string{"FOO"},
 			expected:    "Hello foo_value and $BAZ!",
+		},
+
+		{
+			name:        "Edge cases",
+			text:        "$var-name, $1VAR, ${var.name} $",
+			allowedEnvs: []string{"var-name", "1VAR", "var.name"},
+			expected:    "$var-name, $1VAR, ${var.name} $",
+		},
+
+		{
+			name:        "Variable is set, but empty",
+			text:        "Hello $EMPTY_VAR_VALUE!",
+			allowedEnvs: []string{"EMPTY_VAR_VALUE"},
+			expected:    "Hello !",
 		},
 	}
 
