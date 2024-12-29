@@ -13,7 +13,19 @@ import (
 func main() {
 	// Define required flags
 	allowedFlag := flag.String("a", "", "Comma-separated list of allowed variable names")
-	inputFlag := flag.String("f", "", "Input file")
+	inputFlag := flag.String("f", "", "Input (file, directory, stdin)")
+
+	// Custom usage message
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage: kubectl envsubst [OPTIONS]\n")
+		fmt.Println("\nOptions:")
+		flag.PrintDefaults()
+		fmt.Println("\nExamples:")
+		fmt.Println("  # Substitute only allowed env-vars in a file deployment.yaml")
+		fmt.Println("  kubectl envsubst -a APP_IMAGE,APP_NAME -f deployment.yaml\n")
+		fmt.Println("  # Substitute only allowed env-vars in a file deployment.yaml, read from stdin")
+		fmt.Println("  cat deployment.yaml | kubectl envsubst -a APP_IMAGE,APP_NAME -f -")
+	}
 	flag.Parse()
 
 	// Helper function to check if a flag is set
