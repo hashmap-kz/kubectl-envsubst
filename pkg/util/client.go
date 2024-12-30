@@ -15,7 +15,6 @@ import (
 	"k8s.io/client-go/util/retry"
 	"log"
 	"os"
-	"os/user"
 	"path/filepath"
 )
 
@@ -25,38 +24,40 @@ type KubeClient struct {
 	discoveryMapper *restmapper.DeferredDiscoveryRESTMapper
 }
 
-func GetClient() *KubeClient {
+func GetClient() (*KubeClient, error) {
 
-	// create the dynamic client
-	kubeConfigFile := defaultKubeConfigFile()
-	log.Printf("creating dynamic client with config: %s\n", kubeConfigFile)
-	client := newKubeClient(kubeConfigFile)
+	kubeConfigFile, err := getKubeconfigPath()
+	if err != nil {
+		return nil, err
+	}
 
-	return client
+	client, err := newKubeClient(kubeConfigFile)
+	return client, nil
 }
 
 // NewKubeClient creates an instance of KubeClient
-func newKubeClient(kubeConfigFile string) *KubeClient {
+func newKubeClient(kubeConfigFile string) (*KubeClient, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeConfigFile)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	// create the dynamic client
 	client, err := dynamic.NewForConfig(config)
 	if err != nil {
-		log.Fatalf("failed to create dynamic client: %w", err)
+		return nil, err
 	}
 
 	// create a discovery client to map dynamic API resources
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		log.Fatalf("failed to create discovery client: %w", err)
+		return nil, err
 	}
 
 	discoveryClient := memory.NewMemCacheClient(clientset.Discovery())
 	discoveryMapper := restmapper.NewDeferredDiscoveryRESTMapper(discoveryClient)
-	return &KubeClient{client: client, discoveryMapper: discoveryMapper}
+
+	return &KubeClient{client: client, discoveryMapper: discoveryMapper}, nil
 }
 
 // Apply applies the given YAML manifests to kubernetes
@@ -85,23 +86,29 @@ func (k *KubeClient) Apply(obj *unstructured.Unstructured) error {
 			return fmt.Errorf("apply error: %w", err)
 		}
 
-		log.Printf("applied YAML for %s %q", obj.GetKind(), obj.GetName())
+		log.Printf("%s %q", obj.GetKind(), obj.GetName())
 		return nil
 	})
 
 }
 
-// defaultKubeConfigFile determines the default location of kube config (~/.kube/config)
-func defaultKubeConfigFile() string {
-	e := os.Getenv("KUBECONFIG")
-	if e != "" {
-		return e
+// getKubeconfigPath determines the default location of kube config (~/.kube/config)
+func getKubeconfigPath() (string, error) {
+	if kubeconfigEnvPath := os.Getenv("KUBECONFIG"); kubeconfigEnvPath != "" {
+		return kubeconfigEnvPath, nil
 	}
 
-	usr, err := user.Current()
-	if err != nil {
-		log.Fatalf("unable to find the kube config: %s", err)
+	if home := UserHomeDir(); home != "" {
+		return filepath.Join(home, ".kube", "config"), nil
 	}
-	fromFile := filepath.Join(usr.HomeDir, ".kube", "config")
-	return fromFile
+
+	return "", fmt.Errorf("could not determine kubeconfig directory")
+}
+
+// UserHomeDir returns the current use home directory
+func UserHomeDir() string {
+	if h := os.Getenv("HOME"); h != "" {
+		return h
+	}
+	return os.Getenv("USERPROFILE") // windows
 }

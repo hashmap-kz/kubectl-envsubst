@@ -11,7 +11,10 @@ import (
 
 func main() {
 	file := os.Args[1]
-	client := util.GetClient()
+	client, err := util.GetClient()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	readFile, err := os.Open(file)
 	if err != nil {
