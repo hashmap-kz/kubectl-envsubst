@@ -3,9 +3,7 @@ package util
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"os/exec"
-	"strings"
 )
 
 type ExecCmdInternalResult struct {
@@ -16,19 +14,6 @@ type ExecCmdInternalResult struct {
 func ExecCmd(name string, arg ...string) (ExecCmdInternalResult, error) {
 	cmd := exec.Command(name, arg...)
 
-	log.Println(name + " " + strings.Join(arg, " "))
-
-	// 1) tee
-
-	//var stdoutBuf, stderrBuf bytes.Buffer
-	//cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
-	//cmd.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
-	//
-	//err := cmd.Run()
-	//return stdoutBuf.String(), stderrBuf.String(), err
-
-	// 2) silent
-
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
@@ -37,10 +22,6 @@ func ExecCmd(name string, arg ...string) (ExecCmdInternalResult, error) {
 		StdoutContent: stdoutBuf.String(),
 		StderrContent: stderrBuf.String(),
 	}, err
-}
-
-func (e ExecCmdInternalResult) CombinedOutput() string {
-	return fmt.Sprintf("%s\n%s", e.StdoutContent, e.StderrContent)
 }
 
 func ExecWithStdin(name string, stdinContent []byte, arg ...string) (ExecCmdInternalResult, error) {
@@ -78,4 +59,8 @@ func ExecWithStdin(name string, stdinContent []byte, arg ...string) (ExecCmdInte
 		StdoutContent: stdoutBuf.String(),
 		StderrContent: stderrBuf.String(),
 	}, err
+}
+
+func (e ExecCmdInternalResult) CombinedOutput() string {
+	return fmt.Sprintf("%s\n%s", e.StdoutContent, e.StderrContent)
 }
