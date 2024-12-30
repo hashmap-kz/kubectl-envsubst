@@ -3,6 +3,7 @@ package util
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -179,36 +180,45 @@ func ignoreFile(path string, extensions []string) bool {
 func resolveFilenames2(path string, recursive bool) ([]string, error) {
 	var results []string
 
-	// Handle glob patterns
-	if strings.Contains(path, "*") {
+	// Check if the path is a URL
+	isURL := func(s string) bool {
+		u, err := url.Parse(s)
+		return err == nil && u.Scheme != "" && u.Host != ""
+	}
+
+	if isURL(path) {
+		// Add URL directly to results
+		results = append(results, path)
+	} else if strings.Contains(path, "*") {
+		// Handle glob patterns
 		matches, err := filepath.Glob(path)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error resolving glob pattern: %w", err)
 		}
 		results = append(results, matches...)
 	} else {
 		// Check if the path is a directory or file
 		info, err := os.Stat(path)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error accessing path: %w", err)
 		}
 
 		if info.IsDir() {
-			// List files in the directory
-			err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
+			// Walk the directory
+			err := filepath.WalkDir(path, func(p string, d fs.DirEntry, err error) error {
 				if err != nil {
 					return err
 				}
-				if !info.IsDir() {
-					results = append(results, filepath.Clean(p))
-				}
-				if !recursive && info.IsDir() && p != path {
+				if d.IsDir() && !recursive && p != path {
 					return filepath.SkipDir
+				}
+				if !d.IsDir() {
+					results = append(results, filepath.Clean(p))
 				}
 				return nil
 			})
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("error walking directory: %w", err)
 			}
 		} else {
 			results = append(results, filepath.Clean(path))
