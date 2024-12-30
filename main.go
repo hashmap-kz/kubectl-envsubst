@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-func main() {
+func complex() {
 	file := os.Args[1]
 	client, err := util.GetClient()
 	if err != nil {
@@ -33,4 +33,27 @@ func main() {
 		}
 	}
 
+}
+
+func main() {
+	flags, err := util.ParseCmdFlags(os.Args[1:])
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	part1 := []string{}
+	part1 = append(part1, "--namespace")
+	part1 = append(part1, flags.Namespace)
+	for _, f := range flags.Filenames {
+		part1 = append(part1, "-f")
+		part1 = append(part1, f)
+	}
+	part1 = append(part1, flags.Others...)
+
+	cmd, err := util.ExecCmd("kubectl", part1...)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(cmd.CombinedOutput())
 }
