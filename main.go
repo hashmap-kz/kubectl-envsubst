@@ -5,11 +5,17 @@ import (
 	"github.com/hashmap-kz/kubectl-envsubst/pkg/util"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
 )
 
 func main() {
 	flags, err := util.ParseCmdFlags(os.Args[1:])
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	kubectl, err := exec.LookPath("kubectl")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -28,7 +34,8 @@ func main() {
 		}
 
 		// pass to stdin
-		cmd, err := util.ExecWithStdin("kubectl", file, args...)
+
+		cmd, err := util.ExecWithStdin(kubectl, file, args...)
 		if err != nil {
 			log.Fatal(err)
 		}
