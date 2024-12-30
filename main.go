@@ -59,5 +59,5 @@ func simple() {
 }
 
 func main() {
-	complex()
+	simple()
 }
