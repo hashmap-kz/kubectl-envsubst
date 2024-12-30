@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -173,4 +174,48 @@ func ignoreFile(path string, extensions []string) bool {
 		}
 	}
 	return true
+}
+
+func resolveFilenames2(path string, recursive bool) ([]string, error) {
+	var results []string
+
+	// Handle glob patterns
+	if strings.Contains(path, "*") {
+		matches, err := filepath.Glob(path)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, matches...)
+	} else {
+		// Check if the path is a directory or file
+		info, err := os.Stat(path)
+		if err != nil {
+			return nil, err
+		}
+
+		if info.IsDir() {
+			// List files in the directory
+			err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+				if !info.IsDir() {
+					results = append(results, filepath.Clean(p))
+				}
+				if !recursive && info.IsDir() && p != path {
+					return filepath.SkipDir
+				}
+				return nil
+			})
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			results = append(results, filepath.Clean(path))
+		}
+	}
+
+	// Ensure consistent order
+	sort.Strings(results)
+	return results, nil
 }
