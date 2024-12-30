@@ -15,15 +15,13 @@ var FileExtensions = []string{".json", ".yaml", ".yml"}
 // CmdFlagsProxy holds interested for plugin args
 type CmdFlagsProxy struct {
 	Filenames []string
-	Namespace string
-	Others    []string
 	Recursive bool
+	Others    []string
 }
 
 func ParseCmdFlags(args []string) (*CmdFlagsProxy, error) {
 	res := &CmdFlagsProxy{
 		Filenames: []string{},
-		Namespace: "default",
 		Others:    []string{},
 	}
 
@@ -47,14 +45,6 @@ func ParseCmdFlags(args []string) (*CmdFlagsProxy, error) {
 				i++
 			} else {
 				return nil, fmt.Errorf("flag --filename requires a value")
-			}
-
-		case "--namespace", "-n":
-			if i+1 < len(args) {
-				res.Namespace = args[i+1]
-				i++
-			} else {
-				return nil, fmt.Errorf("flag --namespace requires a value")
 			}
 
 			// already handled, but needs to be skipped

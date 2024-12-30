@@ -9,7 +9,7 @@ import (
 
 func TestParseCmdFlags(t *testing.T) {
 	// Test data setup
-	testDir := "testdata"
+	testDir := "testdata_tmpdir"
 	subDir := filepath.Join(testDir, "subdir")
 	file1 := filepath.Join(testDir, "file1.yaml")
 	file2 := filepath.Join(subDir, "file2.yaml")
@@ -31,7 +31,6 @@ func TestParseCmdFlags(t *testing.T) {
 			args: []string{"--filename", file1},
 			want: &CmdFlagsProxy{
 				Filenames: []string{file1},
-				Namespace: "default",
 				Others:    []string{},
 				Recursive: false,
 			},
@@ -42,7 +41,6 @@ func TestParseCmdFlags(t *testing.T) {
 			args: []string{"--filename", testDir, "--recursive"},
 			want: &CmdFlagsProxy{
 				Filenames: []string{file1, file2},
-				Namespace: "default",
 				Others:    []string{},
 				Recursive: true,
 			},
@@ -53,7 +51,6 @@ func TestParseCmdFlags(t *testing.T) {
 			args: []string{"--filename", filepath.Join(testDir, "*.yaml")},
 			want: &CmdFlagsProxy{
 				Filenames: []string{file1},
-				Namespace: "default",
 				Others:    []string{},
 				Recursive: false,
 			},
@@ -64,8 +61,7 @@ func TestParseCmdFlags(t *testing.T) {
 			args: []string{"--filename", file1, "--namespace", "dev", "extra-arg"},
 			want: &CmdFlagsProxy{
 				Filenames: []string{file1},
-				Namespace: "dev",
-				Others:    []string{"extra-arg"},
+				Others:    []string{"--namespace", "dev", "extra-arg"},
 				Recursive: false,
 			},
 			wantErr: false,
@@ -75,7 +71,6 @@ func TestParseCmdFlags(t *testing.T) {
 			args: []string{"--filename", "http://example.com/file.yaml"},
 			want: &CmdFlagsProxy{
 				Filenames: []string{"http://example.com/file.yaml"},
-				Namespace: "default",
 				Others:    []string{},
 				Recursive: false,
 			},
