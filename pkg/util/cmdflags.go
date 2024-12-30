@@ -1,7 +1,6 @@
 package util
 
 import (
-	"errors"
 	"fmt"
 	"io/fs"
 	"net/url"
@@ -40,7 +39,7 @@ func ParseCmdFlags(args []string) (*CmdFlagsProxy, error) {
 		switch args[i] {
 		case "--filename", "-f":
 			if i+1 < len(args) {
-				files, err := resolveFilenames([]string{args[i+1]}, res.Recursive)
+				files, err := resolveFilenames(args[i+1], res.Recursive)
 				if err != nil {
 					return nil, fmt.Errorf("error resolving filenames: %w", err)
 				}
@@ -71,99 +70,6 @@ func ParseCmdFlags(args []string) (*CmdFlagsProxy, error) {
 	return res, nil
 }
 
-func resolveFilenames(inputPaths []string, recursive bool) ([]string, error) {
-	results := []string{}
-	for _, s := range inputPaths {
-		switch {
-
-		case strings.Index(s, "http://") == 0 || strings.Index(s, "https://") == 0:
-			url, err := url.Parse(s)
-			if err != nil {
-				return nil, err
-			}
-			results = append(results, url.String())
-		default:
-			matches, err := expandIfFilePattern(s)
-			if err != nil {
-				return nil, err
-			}
-
-			builderPaths, err := iterateOverMatches(recursive, matches...)
-			if err != nil {
-				return nil, err
-			}
-			results = append(results, builderPaths...)
-		}
-	}
-
-	return results, nil
-}
-
-func iterateOverMatches(recursive bool, paths ...string) ([]string, error) {
-	results := []string{}
-
-	for _, p := range paths {
-		_, err := os.Stat(p)
-		if os.IsNotExist(err) {
-			return nil, err
-		}
-		if err != nil {
-			return nil, err
-		}
-
-		expandedPaths, err := expandPaths(p, recursive, FileExtensions)
-		if err != nil {
-			return nil, err
-		}
-		results = append(results, expandedPaths...)
-	}
-
-	return results, nil
-}
-
-func expandPaths(paths string, recursive bool, extensions []string) ([]string, error) {
-	results := []string{}
-
-	err := filepath.Walk(paths, func(path string, fi os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if fi.IsDir() {
-			if path != paths && !recursive {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		// Don't check extension if the filepath was passed explicitly
-		if path != paths && ignoreFile(path, extensions) {
-			return nil
-		}
-
-		results = append(results, path)
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-	return results, nil
-}
-
-func expandIfFilePattern(pattern string) ([]string, error) {
-	if _, err := os.Stat(pattern); os.IsNotExist(err) {
-		matches, err := filepath.Glob(pattern)
-		if err == nil && len(matches) == 0 {
-			return nil, fmt.Errorf("path not exist: %s", pattern)
-		}
-		if errors.Is(err, filepath.ErrBadPattern) {
-			return nil, fmt.Errorf("pattern %q is not valid: %v", pattern, err)
-		}
-		return matches, err
-	}
-	return []string{pattern}, nil
-}
-
 func ignoreFile(path string, extensions []string) bool {
 	if len(extensions) == 0 {
 		return false
@@ -177,7 +83,7 @@ func ignoreFile(path string, extensions []string) bool {
 	return true
 }
 
-func resolveFilenames2(path string, recursive bool) ([]string, error) {
+func resolveFilenames(path string, recursive bool) ([]string, error) {
 	var results []string
 
 	// Check if the path is a URL
@@ -213,7 +119,9 @@ func resolveFilenames2(path string, recursive bool) ([]string, error) {
 					return filepath.SkipDir
 				}
 				if !d.IsDir() {
-					results = append(results, filepath.Clean(p))
+					if !ignoreFile(filepath.Clean(p), FileExtensions) {
+						results = append(results, filepath.Clean(p))
+					}
 				}
 				return nil
 			})
@@ -221,7 +129,9 @@ func resolveFilenames2(path string, recursive bool) ([]string, error) {
 				return nil, fmt.Errorf("error walking directory: %w", err)
 			}
 		} else {
-			results = append(results, filepath.Clean(path))
+			if !ignoreFile(filepath.Clean(path), FileExtensions) {
+				results = append(results, filepath.Clean(path))
+			}
 		}
 	}
 
