@@ -37,6 +37,26 @@ func TestParseCmdFlags(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "Single file with equal (long form)",
+			args: []string{"--filename=" + file1},
+			want: &CmdFlagsProxy{
+				Filenames: []string{file1},
+				Others:    []string{},
+				Recursive: false,
+			},
+			wantErr: false,
+		},
+		{
+			name: "Single file with equal (short form)",
+			args: []string{"-f=" + file1},
+			want: &CmdFlagsProxy{
+				Filenames: []string{file1},
+				Others:    []string{},
+				Recursive: false,
+			},
+			wantErr: false,
+		},
+		{
 			name: "Recursive directory",
 			args: []string{"--filename", testDir, "--recursive"},
 			want: &CmdFlagsProxy{
