@@ -25,6 +25,7 @@ func ParseCmdFlags(args []string) (*CmdFlagsProxy, error) {
 		Others:    []string{},
 	}
 
+	// handle pre-flight args that needed beforehand
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--recursive", "-R":
@@ -53,6 +54,10 @@ func ParseCmdFlags(args []string) (*CmdFlagsProxy, error) {
 			} else {
 				return nil, fmt.Errorf("flag --namespace requires a value")
 			}
+
+			// already handled, but needs to be skipped
+		case "--recursive", "-R":
+			res.Recursive = true
 
 		default:
 			res.Others = append(res.Others, args[i])
