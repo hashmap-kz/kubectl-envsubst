@@ -35,7 +35,7 @@ func complex() {
 
 }
 
-func main() {
+func simple() {
 	flags, err := util.ParseCmdFlags(os.Args[1:])
 	if err != nil {
 		log.Fatal(err)
@@ -56,4 +56,8 @@ func main() {
 	}
 
 	fmt.Println(cmd.CombinedOutput())
+}
+
+func main() {
+	complex()
 }
