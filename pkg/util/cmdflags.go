@@ -1,10 +1,11 @@
 package util
 
 import (
+	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 )
 
@@ -37,7 +38,7 @@ func ParseCmdFlags(args []string) (*CmdFlagsProxy, error) {
 		switch args[i] {
 		case "--filename", "-f":
 			if i+1 < len(args) {
-				files, err := resolveFilenames(args[i+1], res.Recursive)
+				files, err := resolveFilenames([]string{args[i+1]}, res.Recursive)
 				if err != nil {
 					return nil, fmt.Errorf("error resolving filenames: %w", err)
 				}
@@ -68,82 +69,58 @@ func ParseCmdFlags(args []string) (*CmdFlagsProxy, error) {
 	return res, nil
 }
 
-func resolveFilenames(path string, recursive bool) ([]string, error) {
-	var results []string
+func resolveFilenames(inputPaths []string, recursive bool) ([]string, error) {
+	results := []string{}
+	for _, s := range inputPaths {
+		switch {
 
-	// Handle glob patterns
-	if strings.Contains(path, "*") {
-		matches, err := filepath.Glob(path)
-		if err != nil {
-			return nil, err
-		}
-		results = append(results, matches...)
-	} else {
-		// Check if the path is a directory or file
-		info, err := os.Stat(path)
-		if err != nil {
-			return nil, err
-		}
-
-		if info.IsDir() {
-			// List files in the directory
-			err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
-				if err != nil {
-					return err
-				}
-				if !info.IsDir() {
-					results = append(results, p)
-				}
-				if !recursive && info.IsDir() && p != path {
-					return filepath.SkipDir
-				}
-				return nil
-			})
+		case strings.Index(s, "http://") == 0 || strings.Index(s, "https://") == 0:
+			url, err := url.Parse(s)
 			if err != nil {
 				return nil, err
 			}
-		} else {
-			results = append(results, path)
+			results = append(results, url.String())
+		default:
+			matches, err := expandIfFilePattern(s)
+			if err != nil {
+				return nil, err
+			}
+
+			builderPaths, err := iterateOverMatches(recursive, matches...)
+			if err != nil {
+				return nil, err
+			}
+			results = append(results, builderPaths...)
 		}
 	}
 
-	// Ensure consistent order
-	sort.Strings(results)
 	return results, nil
 }
 
-// resolveFilenames resolves files, directories, and glob patterns
-func resolveFilenames2(inputPath string, recursive bool) ([]string, error) {
+func iterateOverMatches(recursive bool, paths ...string) ([]string, error) {
 	results := []string{}
 
-	matches, err := filepath.Glob(inputPath)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, path := range matches {
-		// Check if the path is a directory or file
-		_, err := os.Stat(path)
-		if err != nil {
-			return nil, err
-		}
+	for _, p := range paths {
+		_, err := os.Stat(p)
 		if os.IsNotExist(err) {
 			return nil, err
 		}
-
-		visitors, err := ExpandPathsToFileVisitors(path, recursive, FileExtensions)
 		if err != nil {
 			return nil, err
 		}
 
-		results = append(results, visitors...)
+		expandedPaths, err := expandPaths(p, recursive, FileExtensions)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, expandedPaths...)
 	}
 
 	return results, nil
 }
 
-func ExpandPathsToFileVisitors(paths string, recursive bool, extensions []string) ([]string, error) {
-	visitors := []string{}
+func expandPaths(paths string, recursive bool, extensions []string) ([]string, error) {
+	results := []string{}
 
 	err := filepath.Walk(paths, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
@@ -156,20 +133,33 @@ func ExpandPathsToFileVisitors(paths string, recursive bool, extensions []string
 			}
 			return nil
 		}
-
 		// Don't check extension if the filepath was passed explicitly
 		if path != paths && ignoreFile(path, extensions) {
 			return nil
 		}
 
-		visitors = append(visitors, path)
+		results = append(results, path)
 		return nil
 	})
+
 	if err != nil {
 		return nil, err
 	}
+	return results, nil
+}
 
-	return visitors, nil
+func expandIfFilePattern(pattern string) ([]string, error) {
+	if _, err := os.Stat(pattern); os.IsNotExist(err) {
+		matches, err := filepath.Glob(pattern)
+		if err == nil && len(matches) == 0 {
+			return nil, fmt.Errorf("path not exist: %s", pattern)
+		}
+		if errors.Is(err, filepath.ErrBadPattern) {
+			return nil, fmt.Errorf("pattern %q is not valid: %v", pattern, err)
+		}
+		return matches, err
+	}
+	return []string{pattern}, nil
 }
 
 func ignoreFile(path string, extensions []string) bool {
