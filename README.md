@@ -17,7 +17,7 @@ kubectl envsubst apply -f manifests/ --envsubst-allowed-prefixes=CI_,APP_
 # substitute well-defined variables
 kubectl envsubst apply -f manifests/ --envsubst-allowed-vars=CI_PROJECT_NAME,CI_COMMIT_REF_NAME,APP_IMAGE
 
-# mixed mode, check both full match and prefix match 
+# mixed mode, check both full match and prefix match
 kubectl envsubst apply -f manifests/ --envsubst-allowed-prefixes=CI_,APP_ --envsubst-allowed-vars=HOME,USER
 
 # example:
@@ -30,7 +30,7 @@ kubectl envsubst apply -f testdata/subst/01.yaml --dry-run=client -oyaml --envsu
 ### Options:
 
 - --envsubst-allowed-vars     : cmd flag, that consumes a list of names that allowed for expansion
-- --envsubst-allowed-prefixes : cmd flag, that consumes a list of prefixes (APP_), and variables that not match will be ignored 
+- --envsubst-allowed-prefixes : cmd flag, that consumes a list of prefixes (APP_), and variables that not match will be ignored
 
 ### Implementation details
 
@@ -39,3 +39,11 @@ Substitution of environmental variables without checking for inclusion in one of
 If a variable is not found in the filter list and strict mode is not set, an error will not be returned, and this variable will not be replaced in the source text.
 
 If the variable is not found in the filter list and strict mode is set, an error will be returned.
+
+It's totally fine - expanding manifests with all available env-vars, if your manifest contains a service and deployment with a few vars to substitute.
+
+But it will be a hard to debug, it you need to apply a few dozens manifests with config-maps, secrets, CRD's, etc...
+
+It that case you won't be absolutely sure that everything will be placed as expected.
+
+That's why it's better to control the amount of variables that may be substituted.
