@@ -14,58 +14,35 @@ var FileExtensions = []string{".json", ".yaml", ".yml"}
 
 // CmdFlagsProxy holds interested for plugin args
 type CmdFlagsProxy struct {
-	Filenames []string
-	Recursive bool
-	Others    []string
+	Filenames             []string
+	EnvsubstAllowedVars   []string
+	EnvsubstAllowedPrefix []string
+	Recursive             bool
+	Strict                bool
+	Others                []string
 }
 
-func ParseCmdFlags(args []string) (*CmdFlagsProxy, error) {
+func ParseCmdFlags() (*CmdFlagsProxy, error) {
+
+	recognized, err := parseArgs()
+	if err != nil {
+		return nil, err
+	}
+
 	res := &CmdFlagsProxy{
-		Filenames: []string{},
-		Others:    []string{},
+		Filenames:             []string{},
+		EnvsubstAllowedVars:   recognized.EnvsubstAllowedVars,
+		EnvsubstAllowedPrefix: recognized.EnvsubstAllowedPrefix,
+		Recursive:             recognized.Recursive,
+		Strict:                recognized.Strict,
+		Others:                recognized.Others,
 	}
 
-	// handle pre-flight args that needed beforehand
-	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--recursive", "-R":
-			res.Recursive = true
+	for _, f := range recognized.Filenames {
+		err := resolveSingle(f, res)
+		if err != nil {
+			return nil, err
 		}
-	}
-
-	for i := 0; i < len(args); i++ {
-
-		if args[i] == "-f" || args[i] == "--filename" {
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("flag --filename requires a value")
-			}
-
-			filenameGiven := args[i+1]
-			err := resolveSingle(filenameGiven, res)
-			if err != nil {
-				return nil, err
-			}
-			i++
-			continue
-		}
-
-		if strings.HasPrefix(args[i], "-f=") || strings.HasPrefix(args[i], "--filename=") {
-			filenameGiven := strings.SplitN(args[i], "=", 2)[1]
-			err := resolveSingle(filenameGiven, res)
-			if err != nil {
-				return nil, err
-			}
-			continue
-		}
-
-		// already handled beforehand, needs to be skipped
-		if args[i] == "--recursive" || args[i] == "-R" {
-			res.Recursive = true
-			continue
-		}
-
-		// default
-		res.Others = append(res.Others, args[i])
 	}
 
 	return res, nil

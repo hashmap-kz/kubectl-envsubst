@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	flags, err := util.ParseCmdFlags(os.Args[1:])
+	flags, err := util.ParseCmdFlags()
 	if err != nil {
 		log.Fatal(err)
 	}
