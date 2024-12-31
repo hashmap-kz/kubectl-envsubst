@@ -1,16 +1,18 @@
-.PHONY: all kubectl-envsubst test
+SOURCES := $(shell find . -name '*.go')
+BINARY := kubectl-envsubst
+COV_REPORT := "coverage.txt"
 
-all: kubectl-envsubst
+build: kubectl-envsubst
 
-kubectl-envsubst: *.go
-	go build -ldflags="-s -w" .
+test: $(SOURCES)
+	go test -v -short -race -timeout 30s ./...
 
-test:
-	go test ./... -coverprofile=cover.out -v
+test-cov:
+	go test ./... -coverprofile=$(COV_REPORT)
+	go tool cover -html=$(COV_REPORT)
 
-run:
-	go run ./main.go
+clean:
+	@rm -rf $(BINARY)
 
-run-linter:
-	echo "Starting linters"
-	golangci-lint run ./...
+$(BINARY): $(SOURCES)
+	CGO_ENABLED=0 go build -o $(BINARY) -ldflags="-s -w" ./cmd/$(BINARY).go
