@@ -45,10 +45,10 @@ func main() {
 		// pass to stdin
 		cmd, err := util.ExecWithStdin(kubectl, []byte(substituted), args...)
 		if err != nil {
+			fmt.Println(strings.TrimSpace(cmd.StderrContent))
 			log.Fatal(err)
 		}
 
 		fmt.Println(strings.TrimSpace(cmd.StdoutContent))
 	}
-
 }
