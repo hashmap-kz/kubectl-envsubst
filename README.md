@@ -11,13 +11,19 @@
 ### Usage:
 
 ```
-kubectl envsubst apply -f manifests/ --allowed-prefixes=CI_,APP_
-kubectl envsubst apply -f manifests/ --allowed-vars=CI_PROJECT_NAME,CI_COMMIT_REF_NAME,APP_IMAGE
+# substitute variables whose names start with one of the prefixes
+kubectl envsubst apply -f manifests/ --envsubst-allowed-prefixes=CI_,APP_
+
+# substitute well-defined variables
+kubectl envsubst apply -f manifests/ --envsubst-allowed-vars=CI_PROJECT_NAME,CI_COMMIT_REF_NAME,APP_IMAGE
+
+# mixed mode, check both full match and prefix match 
+kubectl envsubst apply -f manifests/ --envsubst-allowed-prefixes=CI_,APP_ --envsubst-allowed-vars=HOME,USER
 ```
 
 ### Options:
 
-- --allowed-vars     : cmd flag, that consumes a list of names that allowed for expansion
-- --allowed-prefixes : cmd flag, that consumes a list of prefixes (APP_), and variables that not match will be ignored 
+- --envsubst-allowed-vars     : cmd flag, that consumes a list of names that allowed for expansion
+- --envsubst-allowed-prefixes : cmd flag, that consumes a list of prefixes (APP_), and variables that not match will be ignored 
 
 
