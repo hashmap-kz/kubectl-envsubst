@@ -2,13 +2,6 @@
 
 A kubectl plugin that substitutes (manageable and predictable) env-vars in k8s manifests before applying them.
 
-## Installation
-
-Use [krew](https://krew.sigs.k8s.io/) plugin manager to install:
-
-    kubectl krew install envsubst
-    kubectl envsubst --help
-
 ### Features:
 
 - Expand environment-variables in manifests passed to kubectl, before applying them
@@ -16,6 +9,32 @@ Use [krew](https://krew.sigs.k8s.io/) plugin manager to install:
 - Has a strict mode (if some variables are not expanded, it fails)
 - Uses all known kubectl args (by just proxying them as is, without any additional actions)
 - ZERO dependencies, and I mean literally zero
+
+## Installation
+
+Use [krew](https://krew.sigs.k8s.io/) plugin manager to install:
+
+    kubectl krew install envsubst
+    kubectl envsubst --help
+
+Download the binary from [GitHub Releases](https://github.com/hashmap-kz/kubectl-envsubst/releases).
+
+```bash
+# Other available architectures are linux_arm64, darwin_amd64, darwin_arm64, windows_amd64.
+export ARCH=linux_amd64
+# Check the latest version, https://github.com/hashmap-kz/kubectl-envsubst/releases/latest
+export VERSION=1.0.2
+wget -O- "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/v${VERSION}/kubectl-envsubst_${VERSION}_${ARCH}.tar.gz" | \
+  sudo tar -xzf - -C /usr/local/bin && \
+  sudo chmod +x /usr/local/bin/kubectl-envsubst
+```
+
+From source.
+
+```bash
+go install github.com/hashmap-kz/kubectl-envsubst@latest
+sudo mv $GOPATH/bin/kubectl-envsubst /usr/local/bin
+```
 
 ### Usage:
 
@@ -50,13 +69,16 @@ kubectl envsubst apply -f testdata/subst/01.yaml --dry-run=client -oyaml --envsu
 
 ### Implementation details
 
-Substitution of environmental variables without checking for inclusion in one of the filter list is not used intentionally, because this behavior can lead to subtle mistakes.
+Substitution of environmental variables without checking for inclusion in one of the filter list is not used
+intentionally, because this behavior can lead to subtle mistakes.
 
-If a variable is not found in the filter list and strict mode is not set, an error will not be returned, and this variable will not be replaced in the source text.
+If a variable is not found in the filter list and strict mode is not set, an error will not be returned, and this
+variable will not be replaced in the source text.
 
 If the variable is not found in the filter list and strict mode is set, an error will be returned.
 
-It's totally fine - expanding manifests with all available env-vars, if your manifest contains a service and deployment with a few vars to substitute.
+It's totally fine - expanding manifests with all available env-vars, if your manifest contains a service and deployment
+with a few vars to substitute.
 
 But it will be a hard to debug, it you need to apply a few dozens manifests with config-maps, secrets, CRD's, etc...
 
