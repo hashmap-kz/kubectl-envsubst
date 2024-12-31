@@ -17,6 +17,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if flags.Help {
+		fmt.Println(util.UsageMessage())
+		os.Exit(0)
+	}
+
 	kubectl, err := exec.LookPath("kubectl")
 	if err != nil {
 		log.Fatal(err)

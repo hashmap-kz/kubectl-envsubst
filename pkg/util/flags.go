@@ -19,6 +19,7 @@ type CmdFlagsProxy struct {
 	EnvsubstAllowedPrefix []string
 	Recursive             bool
 	Strict                bool
+	Help                  bool
 	Others                []string
 }
 
@@ -35,6 +36,7 @@ func ParseCmdFlags() (*CmdFlagsProxy, error) {
 		EnvsubstAllowedPrefix: recognized.EnvsubstAllowedPrefix,
 		Recursive:             recognized.Recursive,
 		Strict:                recognized.Strict,
+		Help:                  recognized.Help,
 		Others:                recognized.Others,
 	}
 
