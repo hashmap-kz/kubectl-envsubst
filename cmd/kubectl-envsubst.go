@@ -46,12 +46,12 @@ func main() {
 	args = append(args, "-")
 
 	// pass stream of files to stdin
-	cmd, err := cmd.ExecWithStdin(kubectl, streams, args...)
+	execCmd, err := cmd.ExecWithStdin(kubectl, streams, args...)
 	if err != nil {
-		fmt.Println(strings.TrimSpace(cmd.StderrContent))
+		fmt.Println(strings.TrimSpace(execCmd.StderrContent))
 		log.Fatal(err)
 	}
 
-	fmt.Println(strings.TrimSpace(cmd.StdoutContent))
+	fmt.Println(strings.TrimSpace(execCmd.StdoutContent))
 
 }
