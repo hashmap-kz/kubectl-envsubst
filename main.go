@@ -17,7 +17,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if flags.Help {
+	// either help message, either 'apply' was not provided
+	if flags.Help || len(flags.Others) == 0 {
 		fmt.Println(util.UsageMessage())
 		os.Exit(0)
 	}
