@@ -29,7 +29,7 @@ func NewEnvsubst(allowedVars []string, allowedPrefixes []string, strict bool) *E
 	}
 }
 
-func (p *Envsubst) substituteEnvs(text string) (string, error) {
+func (p *Envsubst) SubstituteEnvs(text string) (string, error) {
 
 	// Perform substitution using regex
 	substituted := envVarRegex.ReplaceAllStringFunc(text, func(match string) string {

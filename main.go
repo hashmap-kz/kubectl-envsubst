@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/hashmap-kz/kubectl-envsubst/pkg/app"
 	"github.com/hashmap-kz/kubectl-envsubst/pkg/util"
 	"log"
 	"os"
@@ -33,9 +34,15 @@ func main() {
 			log.Fatal(err)
 		}
 
-		// pass to stdin
+		// substitute environment variables
+		envSubst := app.NewEnvsubst(flags.EnvsubstAllowedVars, flags.EnvsubstAllowedPrefix, flags.Strict)
+		substituted, err := envSubst.SubstituteEnvs(string(file))
+		if err != nil {
+			log.Fatal(err)
+		}
 
-		cmd, err := util.ExecWithStdin(kubectl, file, args...)
+		// pass to stdin
+		cmd, err := util.ExecWithStdin(kubectl, []byte(substituted), args...)
 		if err != nil {
 			log.Fatal(err)
 		}
