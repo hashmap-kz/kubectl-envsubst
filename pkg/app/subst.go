@@ -75,6 +75,7 @@ func (p *Envsubst) isFromPrefixList(v string) bool {
 }
 
 func (p *Envsubst) getEnvValue(varName string) (string, bool) {
+
 	// the name completely matches
 	if p.isFromAllowedList(varName) {
 		if value, exists := os.LookupEnv(varName); exists {
@@ -82,15 +83,11 @@ func (p *Envsubst) getEnvValue(varName string) (string, bool) {
 		}
 		return "", false
 	}
-	// the name partially matches
+
+	// the name partially matches (by prefix)
 	if p.isFromPrefixList(varName) {
-		for _, prefix := range p.allowedPrefixes {
-			for _, env := range os.Environ() {
-				parts := strings.SplitN(env, "=", 2)
-				if len(parts) == 2 && strings.HasPrefix(parts[0], prefix) {
-					return parts[1], true
-				}
-			}
+		if value, exists := os.LookupEnv(varName); exists {
+			return value, true
 		}
 		return "", false
 	}
