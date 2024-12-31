@@ -26,4 +26,10 @@ kubectl envsubst apply -f manifests/ --envsubst-allowed-prefixes=CI_,APP_ --envs
 - --envsubst-allowed-vars     : cmd flag, that consumes a list of names that allowed for expansion
 - --envsubst-allowed-prefixes : cmd flag, that consumes a list of prefixes (APP_), and variables that not match will be ignored 
 
+### Implementation details
 
+Substitution of environmental variables without checking for inclusion in one of the filter list is not used intentionally, because this behavior can lead to subtle mistakes.
+
+If a variable is not found in the filter list and strict mode is not set, an error will not be returned, and this variable will not be replaced in the source text.
+
+If the variable is not found in the filter list and strict mode is set, an error will be returned.
