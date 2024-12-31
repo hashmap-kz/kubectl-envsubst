@@ -1,16 +1,22 @@
-.PHONY: all kubectl-envsubst test
+SOURCES := $(shell find . -name '*.go')
+BINARY := kubectl-envsubst
+COV_REPORT := "coverage.txt"
 
-all: kubectl-envsubst
+build: kubectl-envsubst
 
-kubectl-envsubst: *.go
-	go build -ldflags="-s -w" .
+bootstrap:
+	./hack/kind-bootstrap.sh
 
-test:
-	go test ./... -coverprofile=cover.out -v
+test: $(SOURCES)
+	go test -v -short -race -timeout 30s ./...
 
-run:
-	go run ./main.go
+test-cov:
+	go test ./... -coverprofile=$(COV_REPORT)
+	go tool cover -html=$(COV_REPORT)
 
-run-linter:
-	echo "Starting linters"
-	golangci-lint run ./...
+clean:
+	@rm -rf $(BINARY)
+	@kind delete cluster --name kvs-test
+
+$(BINARY): $(SOURCES)
+	CGO_ENABLED=0 go build -o $(BINARY) -ldflags="-s -w" ./cmd/$(BINARY).go

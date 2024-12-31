@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/hashmap-kz/kubectl-envsubst/pkg/util"
+	"github.com/hashmap-kz/kubectl-envsubst/pkg/cmd"
 	"log"
 	"os"
 	"os/exec"
@@ -11,20 +11,20 @@ import (
 
 func main() {
 
-	flags, err := util.ParseCmdFlags()
+	flags, err := cmd.ParseCmdFlags()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// either help message, either 'apply' was not provided
 	if flags.Help || len(flags.Others) == 0 {
-		fmt.Println(util.UsageMessage())
+		fmt.Println(cmd.UsageMessage())
 		os.Exit(0)
 	}
 
 	// support apply operation only
 	if flags.Others[0] != "apply" {
-		fmt.Println(util.UsageMessage())
+		fmt.Println(cmd.UsageMessage())
 		os.Exit(0)
 	}
 
@@ -34,7 +34,7 @@ func main() {
 	}
 
 	// prepare files to apply as a single stream
-	streams, err := util.JoinFiles(flags)
+	streams, err := cmd.JoinFiles(flags)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -46,7 +46,7 @@ func main() {
 	args = append(args, "-")
 
 	// pass stream of files to stdin
-	cmd, err := util.ExecWithStdin(kubectl, streams, args...)
+	cmd, err := cmd.ExecWithStdin(kubectl, streams, args...)
 	if err != nil {
 		fmt.Println(strings.TrimSpace(cmd.StderrContent))
 		log.Fatal(err)

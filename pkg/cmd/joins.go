@@ -1,8 +1,7 @@
-package util
+package cmd
 
 import (
 	"bytes"
-	"github.com/hashmap-kz/kubectl-envsubst/pkg/app"
 	"os"
 )
 
@@ -18,7 +17,7 @@ func JoinFiles(flags *CmdFlagsProxy) ([]byte, error) {
 		}
 
 		// substitute environment variables
-		envSubst := app.NewEnvsubst(flags.EnvsubstAllowedVars, flags.EnvsubstAllowedPrefix, flags.Strict)
+		envSubst := NewEnvsubst(flags.EnvsubstAllowedVars, flags.EnvsubstAllowedPrefix, flags.Strict)
 		substituted, err := envSubst.SubstituteEnvs(string(file))
 		if err != nil {
 			return nil, err
