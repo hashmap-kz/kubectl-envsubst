@@ -1,6 +1,6 @@
 # kubectl-envsubst
 
-A kubectl plugin that substitutes (controlled and predictable) env-vars in k8s manifests before applying them.
+A kubectl plugin that substitutes (manageable and predictable) env-vars in k8s manifests before applying them.
 
 ## Installation
 
@@ -38,9 +38,15 @@ kubectl envsubst apply -f testdata/subst/01.yaml --dry-run=client -oyaml --envsu
 
 ### Flags:
 
-- --envsubst-allowed-vars     : cmd flag, that consumes a list of names that allowed for expansion
-- --envsubst-allowed-prefixes : cmd flag, that consumes a list of prefixes (APP_), and variables that not match will be ignored
-- --envsubst-strict           : cmd flag for ensure that every variable placeholder is substituted
+```
+--envsubst-allowed-vars: consumes comma-separated list of names that allowed for expansion
+    Example: --envsubst-allowed-prefixes=APP_,CI_
+
+--envsubst-allowed-prefixes: consumes comma-separated list of prefixes, variables that not match will be ignored
+    Example: --envsubst-allowed-vars=HOME,USER,PKEY_PATH,DB_PASS,IMAGE_NAME,IMAGE_TAG
+
+--envsubst-strict: for ensure that every variable placeholder is substituted
+```
 
 ### Implementation details
 
