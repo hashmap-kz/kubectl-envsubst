@@ -5,96 +5,261 @@ import (
 	"testing"
 )
 
-func TestSubstituteEnvs(t *testing.T) {
-	// Set environment variables for testing
-	_ = os.Setenv("FOO", "foo_value")
-	_ = os.Setenv("BAR", "bar_value")
-	_ = os.Setenv("EMPTY_VAR_VALUE", "")
-
+func TestEnvsubst(t *testing.T) {
 	tests := []struct {
-		name        string
-		text        string
-		allowedEnvs []string
-		expected    string
+		name            string
+		input           string
+		allowedVars     []string
+		allowedPrefixes []string
+		strict          bool
+		env             map[string]string
+		want            string
+		expectError     bool
 	}{
 		{
-			name:        "Basic substitution with single variable",
-			text:        "Hello $FOO!",
-			allowedEnvs: []string{"FOO"},
-			expected:    "Hello foo_value!",
+			name:        "Basic substitution",
+			input:       "Hello $USER",
+			allowedVars: []string{"USER"},
+			strict:      false,
+			env:         map[string]string{"USER": "Alice"},
+			want:        "Hello Alice",
+			expectError: false,
 		},
 		{
-			name:        "Basic substitution with multiple variables",
-			text:        "Hello $FOO and ${BAR}!",
-			allowedEnvs: []string{"FOO", "BAR"},
-			expected:    "Hello foo_value and bar_value!",
+			name:        "Unallowed variable",
+			input:       "Hello $USER",
+			allowedVars: []string{"NOT_USER"},
+			strict:      false,
+			env:         map[string]string{"USER": "Alice"},
+			want:        "Hello $USER",
+			expectError: false,
 		},
 		{
-			name:        "Variable not in allowed list",
-			text:        "Hello $FOO and $BAR!",
-			allowedEnvs: []string{"FOO"},
-			expected:    "Hello foo_value and $BAR!",
+			name:        "Strict mode with undefined variable",
+			input:       "Hello $USER",
+			allowedVars: []string{},
+			strict:      true,
+			env:         map[string]string{},
+			want:        "",
+			expectError: true,
 		},
 		{
-			name:        "No variables allowed",
-			text:        "Hello $FOO!",
-			allowedEnvs: []string{},
-			expected:    "Hello $FOO!",
+			name:            "Allowed prefix substitution",
+			input:           "Hello $APP_USER",
+			allowedVars:     []string{},
+			allowedPrefixes: []string{"APP_"},
+			strict:          false,
+			env:             map[string]string{"APP_USER": "Bob"},
+			want:            "Hello Bob",
+			expectError:     false,
 		},
 		{
-			name:        "Variable not set in environment",
-			text:        "Hello $UNSET_VAR!",
-			allowedEnvs: []string{"UNSET_VAR"},
-			expected:    "Hello $UNSET_VAR!",
+			name:        "Undefined variable with strict mode",
+			input:       "Hello $USER",
+			allowedVars: []string{"USER"},
+			strict:      true,
+			env:         map[string]string{},
+			want:        "",
+			expectError: true,
 		},
 		{
-			name:        "No substitution needed",
-			text:        "Hello world!",
-			allowedEnvs: []string{"FOO", "BAR"},
-			expected:    "Hello world!",
+			name:        "Multiple variables",
+			input:       "Hello $USER, welcome to $APP_ENV",
+			allowedVars: []string{"USER", "APP_ENV"},
+			strict:      false,
+			env:         map[string]string{"USER": "Charlie", "APP_ENV": "production"},
+			want:        "Hello Charlie, welcome to production",
+			expectError: false,
 		},
 		{
-			name:        "Empty text",
-			text:        "",
-			allowedEnvs: []string{"FOO", "BAR"},
-			expected:    "",
-		},
-		{
-			name:        "Partially valid and invalid variables",
-			text:        "Hello ${FOO} and $BAZ!",
-			allowedEnvs: []string{"FOO"},
-			expected:    "Hello foo_value and $BAZ!",
-		},
-
-		{
-			name:        "Edge cases",
-			text:        "$var-name, $1VAR, ${var.name} $",
-			allowedEnvs: []string{"var-name", "1VAR", "var.name"},
-			expected:    "$var-name, $1VAR, ${var.name} $",
-		},
-
-		{
-			name:        "Variable is set, but empty",
-			text:        "Hello $EMPTY_VAR_VALUE!",
-			allowedEnvs: []string{"EMPTY_VAR_VALUE"},
-			expected:    "Hello !",
-		},
-
-		{
-			name:        "Should ignore special forms: like $(var)",
-			text:        "Hello $(FOO) $((BAR)) $-FOO $ BAR!",
-			allowedEnvs: []string{"FOO", "BAR"},
-			expected:    "Hello $(FOO) $((BAR)) $-FOO $ BAR!",
+			name:        "Partially resolved variables",
+			input:       "Hello $USER, welcome to $APP_ENV",
+			allowedVars: []string{"USER"},
+			strict:      false,
+			env:         map[string]string{"USER": "Charlie"},
+			want:        "Hello Charlie, welcome to $APP_ENV",
+			expectError: false,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			result := SubstituteEnvs(test.text, test.allowedEnvs)
-			if result != test.expected {
-				t.Errorf("Test %q failed: expected %q, got %q", test.name, test.expected, result)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set environment variables
+			for k, v := range tt.env {
+				os.Setenv(k, v)
+			}
+			// Cleanup environment variables
+			defer func() {
+				for k := range tt.env {
+					os.Unsetenv(k)
+				}
+			}()
+
+			// Create Envsubst instance
+			envsubst := NewEnvsubst(tt.allowedVars, tt.allowedPrefixes, tt.strict)
+			result, err := envsubst.substituteEnvs(tt.input)
+
+			if (err != nil) != tt.expectError {
+				t.Errorf("unexpected error status: got %v, want %v", err != nil, tt.expectError)
+			}
+
+			if result != tt.want {
+				t.Errorf("unexpected result: got %q, want %q", result, tt.want)
 			}
 		})
+	}
+}
+
+func TestRegex(t *testing.T) {
+	testCases := []struct {
+		input    string
+		expected []string
+	}{
+		{"$VAR", []string{"VAR"}},
+		{"${VAR}", []string{"VAR"}},
+		{"$1VAR", nil},
+		{"$(VAR)", nil},
+		{"${VAR1_2}", []string{"VAR1_2"}},
+		{"No variable here", nil},
+	}
+
+	for _, tc := range testCases {
+		matches := envVarRegex.FindAllStringSubmatch(tc.input, -1)
+		var result []string
+		for _, match := range matches {
+			if len(match) > 1 {
+				result = append(result, match[1])
+			}
+		}
+
+		if len(result) != len(tc.expected) {
+			t.Errorf("For input '%s', expected %v, got %v", tc.input, tc.expected, result)
+			continue
+		}
+		for i, v := range result {
+			if v != tc.expected[i] {
+				t.Errorf("For input '%s', expected %v, got %v", tc.input, tc.expected, result)
+				break
+			}
+		}
+	}
+}
+
+func TestStrictMode(t *testing.T) {
+	os.Setenv("USER", "Alice")
+	defer os.Unsetenv("USER")
+
+	testCases := []struct {
+		name        string
+		input       string
+		allowedVars []string
+		strict      bool
+		expected    string
+		expectError bool
+	}{
+		{
+			name:        "Strict mode with all variables resolved",
+			input:       "Hello $USER",
+			allowedVars: []string{"USER"},
+			strict:      true,
+			expected:    "Hello Alice",
+			expectError: false,
+		},
+		{
+			name:        "Strict mode with unresolved variable",
+			input:       "Hello $UNKNOWN",
+			allowedVars: []string{"USER"},
+			strict:      true,
+			expected:    "",
+			expectError: true,
+		},
+		{
+			name:        "Strict mode with partially resolved variables",
+			input:       "Hello $USER and $UNKNOWN",
+			allowedVars: []string{"USER"},
+			strict:      true,
+			expected:    "",
+			expectError: true,
+		},
+		{
+			name:        "Strict mode with no variables",
+			input:       "Hello World",
+			allowedVars: []string{},
+			strict:      true,
+			expected:    "Hello World",
+			expectError: false,
+		},
+		{
+			name:        "Non-strict mode with unresolved variable",
+			input:       "Hello $UNKNOWN",
+			allowedVars: []string{"USER"},
+			strict:      false,
+			expected:    "Hello $UNKNOWN",
+			expectError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			envsubst := NewEnvsubst(tc.allowedVars, nil, tc.strict)
+			output, err := envsubst.substituteEnvs(tc.input)
+
+			if (err != nil) != tc.expectError {
+				t.Errorf("Unexpected error status for input '%s': got %v, want error=%v", tc.input, err, tc.expectError)
+			}
+			if output != tc.expected {
+				t.Errorf("For input '%s', expected '%s', got '%s'", tc.input, tc.expected, output)
+			}
+		})
+	}
+}
+
+func TestIsFromAllowedList(t *testing.T) {
+	envsubst := NewEnvsubst([]string{"USER"}, nil, false)
+
+	if !envsubst.isFromAllowedList("USER") {
+		t.Errorf("expected USER to be in the allowed list")
+	}
+
+	if envsubst.isFromAllowedList("OTHER") {
+		t.Errorf("expected OTHER not to be in the allowed list")
+	}
+}
+
+func TestIsFromPrefixList(t *testing.T) {
+	envsubst := NewEnvsubst(nil, []string{"APP_"}, false)
+
+	if !envsubst.isFromPrefixList("APP_USER") {
+		t.Errorf("expected APP_USER to be matched by prefix APP_")
+	}
+
+	if envsubst.isFromPrefixList("USER") {
+		t.Errorf("expected USER not to be matched by prefix APP_")
+	}
+}
+
+func TestGetEnvValue(t *testing.T) {
+	envsubst := NewEnvsubst([]string{"USER"}, []string{"APP_"}, false)
+	os.Setenv("USER", "Alice")
+	os.Setenv("APP_USER", "Bob")
+	defer func() {
+		os.Unsetenv("USER")
+		os.Unsetenv("APP_USER")
+	}()
+
+	value, ok := envsubst.getEnvValue("USER")
+	if !ok || value != "Alice" {
+		t.Errorf("unexpected value for USER: got %q, want %q", value, "Alice")
+	}
+
+	value, ok = envsubst.getEnvValue("APP_USER")
+	if !ok || value != "Bob" {
+		t.Errorf("unexpected value for APP_USER: got %q, want %q", value, "Bob")
+	}
+
+	value, ok = envsubst.getEnvValue("UNSET_VAR")
+	if ok {
+		t.Errorf("expected UNSET_VAR to not be found")
 	}
 }
 
@@ -463,6 +628,17 @@ spec:
 	_ = os.Setenv("remote_addr", "2048")
 	_ = os.Setenv("host", "2048")
 
+	defer func() {
+		for _, e := range []string{
+			"request_uri",
+			"server_name",
+			"remote_addr",
+			"host",
+		} {
+			os.Unsetenv(e)
+		}
+	}()
+
 	tests := []struct {
 		name        string
 		text        string
@@ -479,9 +655,15 @@ spec:
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := SubstituteEnvs(test.text, test.allowedEnvs)
-			if result != test.expected {
-				t.Errorf("Test %q failed: expected %q, got %q", test.name, test.expected, result)
+			envsubst := NewEnvsubst(test.allowedEnvs, []string{}, false)
+			output, err := envsubst.substituteEnvs(test.text)
+
+			if err != nil {
+				t.Errorf("Unexpected error status for complex test")
+			}
+
+			if output != test.expected {
+				t.Errorf("Test %q failed: expected %q, got %q", test.name, test.expected, output)
 			}
 		})
 	}
