@@ -97,7 +97,7 @@ func TestEnvsubst(t *testing.T) {
 
 			// Create Envsubst instance
 			envsubst := NewEnvsubst(tt.allowedVars, tt.allowedPrefixes, tt.strict)
-			result, err := envsubst.substituteEnvs(tt.input)
+			result, err := envsubst.SubstituteEnvs(tt.input)
 
 			if (err != nil) != tt.expectError {
 				t.Errorf("unexpected error status: got %v, want %v", err != nil, tt.expectError)
@@ -202,7 +202,7 @@ func TestStrictMode(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			envsubst := NewEnvsubst(tc.allowedVars, nil, tc.strict)
-			output, err := envsubst.substituteEnvs(tc.input)
+			output, err := envsubst.SubstituteEnvs(tc.input)
 
 			if (err != nil) != tc.expectError {
 				t.Errorf("Unexpected error status for input '%s': got %v, want error=%v", tc.input, err, tc.expectError)
@@ -656,7 +656,7 @@ spec:
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			envsubst := NewEnvsubst(test.allowedEnvs, []string{}, false)
-			output, err := envsubst.substituteEnvs(test.text)
+			output, err := envsubst.SubstituteEnvs(test.text)
 
 			if err != nil {
 				t.Errorf("Unexpected error status for complex test")
