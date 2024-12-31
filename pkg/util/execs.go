@@ -28,20 +28,26 @@ func ExecWithStdin(name string, stdinContent []byte, arg ...string) (ExecCmdInte
 	// Define the command to execute
 	cmd := exec.Command(name, arg...)
 
-	// Create a pipe for stdin
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return ExecCmdInternalResult{}, err
-	}
-
 	// Buffers to capture stdout and stderr
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
 
+	// Create a pipe for stdin
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return ExecCmdInternalResult{
+			StdoutContent: stdoutBuf.String(),
+			StderrContent: stderrBuf.String(),
+		}, err
+	}
+
 	// Start the command
 	if err := cmd.Start(); err != nil {
-		return ExecCmdInternalResult{}, err
+		return ExecCmdInternalResult{
+			StdoutContent: stdoutBuf.String(),
+			StderrContent: stderrBuf.String(),
+		}, err
 	}
 
 	// Write to stdin in a separate goroutine
@@ -52,7 +58,10 @@ func ExecWithStdin(name string, stdinContent []byte, arg ...string) (ExecCmdInte
 
 	// Wait for the command to finish
 	if err := cmd.Wait(); err != nil {
-		return ExecCmdInternalResult{}, err
+		return ExecCmdInternalResult{
+			StdoutContent: stdoutBuf.String(),
+			StderrContent: stderrBuf.String(),
+		}, err
 	}
 
 	return ExecCmdInternalResult{

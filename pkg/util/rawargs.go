@@ -12,6 +12,7 @@ type CmdArgsRawRecognized struct {
 	EnvsubstAllowedPrefix []string
 	Strict                bool
 	Recursive             bool
+	Help                  bool
 	Others                []string
 }
 
@@ -113,6 +114,10 @@ func parseArgs() (CmdArgsRawRecognized, error) {
 		// --recursive, -R
 		case arg == "--recursive" || arg == "-R":
 			result.Recursive = true
+
+			// --help, -h
+		case arg == "--help" || arg == "-h":
+			result.Help = true
 
 		default:
 			result.Others = append(result.Others, arg)

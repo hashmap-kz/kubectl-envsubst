@@ -19,6 +19,12 @@ kubectl envsubst apply -f manifests/ --envsubst-allowed-vars=CI_PROJECT_NAME,CI_
 
 # mixed mode, check both full match and prefix match 
 kubectl envsubst apply -f manifests/ --envsubst-allowed-prefixes=CI_,APP_ --envsubst-allowed-vars=HOME,USER
+
+# example:
+export APP_NAME=nginx
+export APP_IMAGE_NAME=nginx
+export APP_IMAGE_TAG=latest
+kubectl envsubst apply -f testdata/subst/01.yaml --dry-run=client -oyaml --envsubst-allowed-prefixes=APP_
 ```
 
 ### Options:
