@@ -26,9 +26,15 @@ func TestParseArgs(t *testing.T) {
 			expectedError:  false,
 		},
 		{
-			name:           "Strict flag",
-			args:           []string{"--strict"},
+			name:           "Strict flag (expect strict)",
+			args:           []string{"--envsubst-mode=strict"},
 			expectedResult: CmdArgsRawRecognized{Strict: true},
+			expectedError:  false,
+		},
+		{
+			name:           "Strict flag (expect not-strict)",
+			args:           []string{"--envsubst-mode=not-strict"},
+			expectedResult: CmdArgsRawRecognized{Strict: false},
 			expectedError:  false,
 		},
 		{
@@ -81,7 +87,7 @@ func TestParseArgs(t *testing.T) {
 		},
 		{
 			name: "Mix of valid and invalid args",
-			args: []string{"--filename=file.yaml", "--strict", "--unknown"},
+			args: []string{"--filename=file.yaml", "--envsubst-mode=strict", "--unknown"},
 			expectedResult: CmdArgsRawRecognized{
 				Filenames: []string{"file.yaml"},
 				Strict:    true,
@@ -139,7 +145,7 @@ func TestParseArgs(t *testing.T) {
 		},
 		{
 			name:           "Recursive and strict flags",
-			args:           []string{"-R", "--strict"},
+			args:           []string{"-R", "--envsubst-mode=strict"},
 			expectedResult: CmdArgsRawRecognized{Recursive: true, Strict: true},
 			expectedError:  false,
 		},
@@ -157,7 +163,7 @@ func TestParseArgs(t *testing.T) {
 		},
 		{
 			name: "Mixed valid and unrecognized arguments",
-			args: []string{"--strict", "random-arg", "--filename=file.yaml"},
+			args: []string{"--envsubst-mode=strict", "random-arg", "--filename=file.yaml"},
 			expectedResult: CmdArgsRawRecognized{
 				Filenames: []string{"file.yaml"},
 				Strict:    true,

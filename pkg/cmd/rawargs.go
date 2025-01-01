@@ -107,9 +107,34 @@ func parseArgs() (CmdArgsRawRecognized, error) {
 				return result, fmt.Errorf("missing value for flag %s", arg)
 			}
 
-			// --strict
-		case arg == "--strict":
-			result.Strict = true
+			// --envsubst-mode=strict
+		case strings.HasPrefix(arg, "--envsubst-mode="):
+			mode := strings.TrimPrefix(arg, "--envsubst-mode=")
+			if mode == "" {
+				return result, fmt.Errorf("missing value for flag %s", arg)
+			}
+			strict, err := isStrict(mode)
+			if err != nil {
+				return result, err
+			}
+			result.Strict = strict
+
+			// --envsubst-mode not-strict
+		case arg == "--envsubst-mode":
+			if i+1 < len(args) {
+				mode := args[i+1]
+				if mode == "" {
+					return result, fmt.Errorf("missing value for flag %s", arg)
+				}
+				strict, err := isStrict(mode)
+				if err != nil {
+					return result, err
+				}
+				result.Strict = strict
+				i++ // Skip the next argument since it's the value
+			} else {
+				return result, fmt.Errorf("missing value for flag %s", arg)
+			}
 
 		// --recursive, -R
 		case arg == "--recursive" || arg == "-R":
@@ -125,4 +150,14 @@ func parseArgs() (CmdArgsRawRecognized, error) {
 	}
 
 	return result, nil
+}
+
+func isStrict(mode string) (bool, error) {
+	if strings.ToLower(mode) == "not-strict" {
+		return false, nil
+	}
+	if strings.ToLower(mode) == "strict" {
+		return true, nil
+	}
+	return false, fmt.Errorf("incorrect mode: %s, expected one of: strict/not-strict", mode)
 }
