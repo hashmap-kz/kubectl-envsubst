@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -66,8 +67,18 @@ func (p *Envsubst) SubstituteEnvs(text string) (string, error) {
 	// Handle strict mode by detecting unresolved variables
 	if p.strict {
 		unresolved := envVarRegex.FindAllString(substituted, -1)
+
+		sort.Strings(unresolved)
 		if len(unresolved) > 0 {
-			return "", fmt.Errorf("undefined variables: %v", unresolved)
+			sb := strings.Builder{}
+			for _, k := range unresolved {
+				k := strings.Trim(k, "${}")
+				if !strings.Contains(sb.String(), k) {
+					sb.WriteString(k + ", ")
+				}
+			}
+			resultList := strings.TrimSpace(sb.String())
+			return "", fmt.Errorf("undefined variables: [%s]", strings.TrimSuffix(resultList, ","))
 		}
 	}
 
