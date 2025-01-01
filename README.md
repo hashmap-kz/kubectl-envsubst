@@ -64,7 +64,7 @@ kubectl envsubst apply -f testdata/subst/01.yaml --dry-run=client -oyaml --envsu
 --envsubst-allowed-prefixes: consumes comma-separated list of prefixes, variables that not match will be ignored
     Example: --envsubst-allowed-vars=HOME,USER,PKEY_PATH,DB_PASS,IMAGE_NAME,IMAGE_TAG
 
---envsubst-strict: for ensure that every variable placeholder is substituted
+--envsubst-no-strict: strict mode is ON by default, in 99% of cases, this is exactly what is required.
 ```
 
 ### Implementation details

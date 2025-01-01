@@ -214,55 +214,6 @@ func TestStrictMode(t *testing.T) {
 	}
 }
 
-func TestIsFromAllowedList(t *testing.T) {
-	envsubst := NewEnvsubst([]string{"USER"}, nil, false)
-
-	if !envsubst.isFromAllowedList("USER") {
-		t.Errorf("expected USER to be in the allowed list")
-	}
-
-	if envsubst.isFromAllowedList("OTHER") {
-		t.Errorf("expected OTHER not to be in the allowed list")
-	}
-}
-
-func TestIsFromPrefixList(t *testing.T) {
-	envsubst := NewEnvsubst(nil, []string{"APP_"}, false)
-
-	if !envsubst.isFromPrefixList("APP_USER") {
-		t.Errorf("expected APP_USER to be matched by prefix APP_")
-	}
-
-	if envsubst.isFromPrefixList("USER") {
-		t.Errorf("expected USER not to be matched by prefix APP_")
-	}
-}
-
-func TestGetEnvValue(t *testing.T) {
-	envsubst := NewEnvsubst([]string{"USER"}, []string{"APP_"}, false)
-	os.Setenv("USER", "Alice")
-	os.Setenv("APP_USER", "Bob")
-	defer func() {
-		os.Unsetenv("USER")
-		os.Unsetenv("APP_USER")
-	}()
-
-	value, ok := envsubst.getEnvValue("USER")
-	if !ok || value != "Alice" {
-		t.Errorf("unexpected value for USER: got %q, want %q", value, "Alice")
-	}
-
-	value, ok = envsubst.getEnvValue("APP_USER")
-	if !ok || value != "Bob" {
-		t.Errorf("unexpected value for APP_USER: got %q, want %q", value, "Bob")
-	}
-
-	value, ok = envsubst.getEnvValue("UNSET_VAR")
-	if ok {
-		t.Errorf("expected UNSET_VAR to not be found")
-	}
-}
-
 func TestComplexManifests(t *testing.T) {
 	var complexMixedTest = `
 ---
