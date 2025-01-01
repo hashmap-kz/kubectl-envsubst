@@ -32,6 +32,10 @@ func parseArgs() (CmdArgsRawRecognized, error) {
 	args := os.Args[1:] // Skip the program name
 	var result CmdArgsRawRecognized
 
+	// by default working in strict mode
+	// may be turned off with --envsubst-no-strict flag
+	result.Strict = true
+
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
 		switch {
@@ -107,34 +111,9 @@ func parseArgs() (CmdArgsRawRecognized, error) {
 				return result, fmt.Errorf("missing value for flag %s", arg)
 			}
 
-			// --envsubst-mode=strict
-		case strings.HasPrefix(arg, "--envsubst-mode="):
-			mode := strings.TrimPrefix(arg, "--envsubst-mode=")
-			if mode == "" {
-				return result, fmt.Errorf("missing value for flag %s", arg)
-			}
-			strict, err := isStrict(mode)
-			if err != nil {
-				return result, err
-			}
-			result.Strict = strict
-
-			// --envsubst-mode not-strict
-		case arg == "--envsubst-mode":
-			if i+1 < len(args) {
-				mode := args[i+1]
-				if mode == "" {
-					return result, fmt.Errorf("missing value for flag %s", arg)
-				}
-				strict, err := isStrict(mode)
-				if err != nil {
-					return result, err
-				}
-				result.Strict = strict
-				i++ // Skip the next argument since it's the value
-			} else {
-				return result, fmt.Errorf("missing value for flag %s", arg)
-			}
+		// --envsubst-no-strict
+		case arg == "--envsubst-no-strict":
+			result.Strict = false
 
 		// --recursive, -R
 		case arg == "--recursive" || arg == "-R":

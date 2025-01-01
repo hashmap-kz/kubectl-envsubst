@@ -5,4 +5,4 @@ set -euo pipefail
 . vars.sh
 
 # expand manifests
-kubectl envsubst apply -f manifests/ --envsubst-allowed-prefixes=CI_,APP_,INFRA_ --strict --dry-run=client -oyaml
+kubectl envsubst apply -f manifests/ --envsubst-allowed-prefixes=CI_,APP_,INFRA_ --dry-run=client -oyaml
