@@ -105,3 +105,160 @@ But it will be a hard to debug, it you need to apply a few dozens manifests with
 It that case you won't be absolutely sure that everything will be placed as expected.
 
 That's why it's better to control the amount of variables that may be substituted.
+
+### Usage scenario in CI/CD
+
+A typical setup (with dev/stage/prod environments) for a typical microservice may look like this:
+
+```
+.
+├── cmd
+│   └── auth-svc.go
+├── go.mod
+├── go.sum
+├── .gitlab-ci.yml
+├── k8s-manifests
+│   ├── dev
+│   │   └── manifests.yaml
+│   ├── prod
+│   │   ├── hpa.yaml
+│   │   ├── manifests.yaml
+│   │   └── secrets.yaml
+│   └── stage
+│       └── manifests.yaml
+├── README.md
+```
+
+Where for each environment (dev, stage, prod) there are a bunch of k8s-manifests.
+
+They may vary between environments just in naming (image name in registry), or may contain specific resources (hpa and secrets for prod).
+
+But the main part is duplicated (service, deployment, ingress, secrets, labels, naming conventions, etc...).
+
+And all these duplicated parts may be substituted from env-vars in a pipeline you use.
+
+The tool that you use for CI/CD does not matter, each tool may provide different var-names and patterns.
+
+In this example, a project name, its path, labels are the same for all environments.
+
+Only the image name will be different, and perhaps you may also include specific resources, depends on your needs.
+
+```yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: &app ${CI_PROJECT_NAME}
+  labels:
+    app: *app
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+  selector:
+    app: *app
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: &app ${CI_PROJECT_NAME}
+  labels:
+    app: *app
+type: Opaque
+stringData:
+  vault_path: "secret/${CI_PROJECT_PATH}/${CI_COMMIT_REF_NAME}"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: &app ${CI_PROJECT_NAME}
+  labels:
+    app: *app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: *app
+  template:
+    metadata:
+      labels:
+        app: *app
+    spec:
+      containers:
+        - name: *app
+          # image name for each environment is different (dev, stage, prod)
+          image: ${APP_IMAGE}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - secretRef:
+                name: *app
+```
+
+Let's assume that we deploy our application by using gitlab-ci (the tool does not matter, just an example).
+
+This bash script is used as an example that illustrates if we have env-vars in the context we deploy our application - then we may use these vars in our manifests.
+
+```bash
+# gitlab-specific variables, that defined in each pipeline 
+# we simulate that pipeline by setting them by hand
+export CI_REGISTRY=mirror-0.company.org:5000
+export CI_PROJECT_ROOT_NAMESPACE=banking-system-envsubst-test
+export CI_PROJECT_NAMESPACE=backend/auth-svc
+export CI_PROJECT_PATH=banking-system-envsubst-test/backend/auth-svc
+export CI_PROJECT_NAME=auth-svc
+export CI_COMMIT_REF_NAME=dev
+
+# project-specific variables (may be passed to pipeline from secrets, project/group variables, combined from other vars, etc...)
+# nginx image is used for simplicity, of course there will be your images, that was pushed to your repo in build-step
+export APP_IMAGE=nginx
+export APP_NAMESPACE="${CI_PROJECT_ROOT_NAMESPACE}-${CI_COMMIT_REF_NAME}"
+export INFRA_DOMAIN_NAME=company.org
+
+# prepare namespace and context
+kubectl create ns "${APP_NAMESPACE}" --dry-run=client -oyaml | kubectl apply -f -
+kubectl config set-context --current --namespace="${APP_NAMESPACE}"
+
+# expand and apply manifests
+kubectl envsubst apply -f "k8s-manifests/${CI_COMMIT_REF_NAME}" \
+  --envsubst-allowed-prefixes=CI_,APP_,INFRA_
+```
+
+The CI/CD stage may look like this:
+
+```yaml
+deploy:
+  stage: deploy
+  before_script:
+    - apk update && apk add --no-cache bash curl jq
+    # setup kubectl
+    - curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+    - chmod +x ./kubectl
+    - cp ./kubectl /usr/local/bin
+    # setup kubectl-envsubst plugin
+    - wget -O- "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/v1.0.6/kubectl-envsubst_v1.0.6_linux_amd64.tar.gz" | \
+      tar -xzf - -C /usr/local/bin && chmod +x /usr/local/bin/kubectl-envsubst
+  tags:
+    - dind
+  environment:
+    name: $CI_COMMIT_REF_NAME
+  script:
+    - kubectl create ns "${APP_NAMESPACE}" --dry-run=client -oyaml | kubectl apply -f -
+    - kubectl config set-context --current --namespace="${APP_NAMESPACE}"
+    - kubectl envsubst apply -f "k8s-manifests/${CI_COMMIT_REF_NAME}" --envsubst-allowed-prefixes=CI_,APP_,INFRA_
+    - kubectl rollout restart deploy "${CI_PROJECT_NAME}"
+```
+
+> As a result - we use plain kubernetes manifests, without any 'magic-preprocessing-tricks', and environment variables for
+> handling application deploy in different environments (dev, stage, prod, etc...).
+> 
+> The main point - that we're totally sure that the variable substitution is managed and predictable.
+> 
+> If our application contains a configmap for nginx (that uses $ sign a LOT), we're absolutely sure that there will be
+> no substitutions, if we're not allow it explicitly by adding collide variables in allow-list of prefix-list.
+
