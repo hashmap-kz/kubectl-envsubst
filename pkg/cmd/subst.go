@@ -1,14 +1,11 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 	"sort"
 	"strings"
-)
-
-import (
-	"fmt"
 )
 
 var (
