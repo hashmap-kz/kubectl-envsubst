@@ -130,13 +130,3 @@ func parseArgs() (CmdArgsRawRecognized, error) {
 
 	return result, nil
 }
-
-func isStrict(mode string) (bool, error) {
-	if strings.ToLower(mode) == "not-strict" {
-		return false, nil
-	}
-	if strings.ToLower(mode) == "strict" {
-		return true, nil
-	}
-	return false, fmt.Errorf("incorrect mode: %s, expected one of: strict/not-strict", mode)
-}
