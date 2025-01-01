@@ -32,6 +32,10 @@ func parseArgs() (CmdArgsRawRecognized, error) {
 	args := os.Args[1:] // Skip the program name
 	var result CmdArgsRawRecognized
 
+	// by default working in strict mode
+	// may be turned off with --envsubst-no-strict flag
+	result.Strict = true
+
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
 		switch {
@@ -107,9 +111,9 @@ func parseArgs() (CmdArgsRawRecognized, error) {
 				return result, fmt.Errorf("missing value for flag %s", arg)
 			}
 
-			// --strict
-		case arg == "--strict":
-			result.Strict = true
+		// --envsubst-no-strict
+		case arg == "--envsubst-no-strict":
+			result.Strict = false
 
 		// --recursive, -R
 		case arg == "--recursive" || arg == "-R":
@@ -125,4 +129,14 @@ func parseArgs() (CmdArgsRawRecognized, error) {
 	}
 
 	return result, nil
+}
+
+func isStrict(mode string) (bool, error) {
+	if strings.ToLower(mode) == "not-strict" {
+		return false, nil
+	}
+	if strings.ToLower(mode) == "strict" {
+		return true, nil
+	}
+	return false, fmt.Errorf("incorrect mode: %s, expected one of: strict/not-strict", mode)
 }
