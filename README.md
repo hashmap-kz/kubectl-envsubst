@@ -44,33 +44,47 @@ sudo mv $GOPATH/bin/kubectl-envsubst /usr/local/bin
 
 ### Usage:
 
-```
+```bash
 # substitute variables whose names start with one of the prefixes
 kubectl envsubst apply -f manifests/ --envsubst-allowed-prefixes=CI_,APP_
 
 # substitute well-defined variables
-kubectl envsubst apply -f manifests/ --envsubst-allowed-vars=CI_PROJECT_NAME,CI_COMMIT_REF_NAME,APP_IMAGE
+kubectl envsubst apply -f manifests/ \
+    --envsubst-allowed-vars=CI_PROJECT_NAME,CI_COMMIT_REF_NAME,APP_IMAGE
 
 # mixed mode, check both full match and prefix match
-kubectl envsubst apply -f manifests/ --envsubst-allowed-prefixes=CI_,APP_ --envsubst-allowed-vars=HOME,USER
+kubectl envsubst apply -f manifests/ \
+    --envsubst-allowed-prefixes=CI_,APP_ \
+    --envsubst-allowed-vars=HOME,USER
 
 # example:
 export APP_NAME=nginx
 export APP_IMAGE_NAME=nginx
 export APP_IMAGE_TAG=latest
-kubectl envsubst apply -f testdata/subst/01.yaml --dry-run=client -oyaml --envsubst-allowed-prefixes=APP_
+kubectl envsubst apply -f testdata/subst/01.yaml \
+    --dry-run=client -oyaml \
+    --envsubst-allowed-prefixes=APP_
 ```
 
 ### Flags:
 
 ```
---envsubst-allowed-vars: consumes comma-separated list of names that allowed for expansion
+--envsubst-allowed-vars 
+    Description: 
+        Consumes comma-separated list of names that allowed for expansion.
+        If a variable not in allowed list, it won't be expanded.
     Example: --envsubst-allowed-prefixes=APP_,CI_
 
---envsubst-allowed-prefixes: consumes comma-separated list of prefixes, variables that not match will be ignored
+--envsubst-allowed-prefixes 
+    Description: 
+        Consumes comma-separated list of prefixes.
+        Variables whose names do not start with any prefix will be ignored.
     Example: --envsubst-allowed-vars=HOME,USER,PKEY_PATH,DB_PASS,IMAGE_NAME,IMAGE_TAG
 
---envsubst-no-strict: strict mode is ON by default, in 99% of cases, this is exactly what is required.
+--envsubst-no-strict
+    Description: 
+        Strict mode is ON by default. 
+        In 99% of cases, this is exactly what is required.
 ```
 
 ### Implementation details
