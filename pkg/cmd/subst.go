@@ -31,6 +31,24 @@ func NewEnvsubst(allowedVars []string, allowedPrefixes []string, strict bool) *E
 
 func (p *Envsubst) SubstituteEnvs(text string) (string, error) {
 
+	// Collect allowed environment variables and prefixes
+	envMap := make(map[string]string)
+	for _, env := range p.allowedVars {
+		if value, exists := os.LookupEnv(env); exists {
+			envMap[env] = value
+		}
+	}
+
+	// Add variables with allowed prefixes
+	for _, prefix := range p.allowedPrefixes {
+		for _, env := range os.Environ() {
+			parts := strings.SplitN(env, "=", 2)
+			if len(parts) == 2 && strings.HasPrefix(parts[0], prefix) {
+				envMap[parts[0]] = parts[1]
+			}
+		}
+	}
+
 	// Perform substitution using regex
 	substituted := envVarRegex.ReplaceAllStringFunc(text, func(match string) string {
 		// Extract the variable name
@@ -38,7 +56,7 @@ func (p *Envsubst) SubstituteEnvs(text string) (string, error) {
 		varName := strings.Trim(match, "${}")
 
 		// get value, according to filters
-		if value, ok := p.getEnvValue(varName); ok {
+		if value, ok := envMap[varName]; ok {
 			return value
 		}
 
@@ -54,43 +72,4 @@ func (p *Envsubst) SubstituteEnvs(text string) (string, error) {
 	}
 
 	return substituted, nil
-}
-
-func (p *Envsubst) isFromAllowedList(v string) bool {
-	for _, env := range p.allowedVars {
-		if env == v {
-			return true
-		}
-	}
-	return false
-}
-
-func (p *Envsubst) isFromPrefixList(v string) bool {
-	for _, prefix := range p.allowedPrefixes {
-		if strings.HasPrefix(v, prefix) {
-			return true
-		}
-	}
-	return false
-}
-
-func (p *Envsubst) getEnvValue(varName string) (string, bool) {
-
-	// the name completely matches
-	if p.isFromAllowedList(varName) {
-		if value, exists := os.LookupEnv(varName); exists {
-			return value, true
-		}
-		return "", false
-	}
-
-	// the name partially matches (by prefix)
-	if p.isFromPrefixList(varName) {
-		if value, exists := os.LookupEnv(varName); exists {
-			return value, true
-		}
-		return "", false
-	}
-
-	return "", false
 }
