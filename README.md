@@ -1,4 +1,6 @@
-# kubectl-envsubst
+# **kubectl-envsubst**
+
+_A `kubectl` plugin for substituting environment variables in Kubernetes manifests before applying them._
 
 [![License](https://img.shields.io/github/license/hashmap-kz/kubectl-envsubst)](https://github.com/hashmap-kz/kubectl-envsubst/blob/master/LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hashmap-kz/kubectl-envsubst)](https://goreportcard.com/report/github.com/hashmap-kz/kubectl-envsubst)
@@ -6,109 +8,126 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/hashmap-kz/kubectl-envsubst)](https://github.com/hashmap-kz/kubectl-envsubst/blob/master/go.mod#L3)
 [![Latest Release](https://img.shields.io/github/v/release/hashmap-kz/kubectl-envsubst)](https://github.com/hashmap-kz/kubectl-envsubst/releases/latest)
 
-A kubectl plugin that substitutes (manageable and predictable) env-vars in k8s manifests before applying them.
+---
 
-### Features:
+## **Features**
 
-- Expand environment-variables in manifests passed to kubectl, before applying them
-- Uses prefixes, and allowed variables (you're able to be totally sure what it's going to be substituted)
-- Has a strict mode (if some variables are not expanded, it fails)
-- Uses all known kubectl args (by just proxying them as is, without any additional actions)
-- ZERO dependencies, and I mean literally zero
+- **Environment Variable Substitution**: Replaces placeholders in Kubernetes manifests with environment variable values.
+- **Allowed Variable Filtering**: Allows you to control substitutions by specifying prefixes or permitted
+  variables.
+- **Strict Mode**: Fails if any placeholders remain unexpanded, ensuring deployment predictability.
+- **Seamless Integration**: Works with all `kubectl` arguments, that may be used in `apply`.
+- **Zero Dependencies**: No external tools or libraries are required, simplifying installation and operation.
 
-## Installation
+---
 
-Use [krew](https://krew.sigs.k8s.io/) plugin manager to install:
+## **Installation**
 
-    kubectl krew install envsubst
-    kubectl envsubst --help
+### Using `krew`
 
-Download the binary from [GitHub Releases](https://github.com/hashmap-kz/kubectl-envsubst/releases).
+1. Install the [Krew](https://krew.sigs.k8s.io/docs/user-guide/setup/) plugin manager if you haven’t already.
+2. Run the following command:
+   ```bash
+   kubectl krew install envsubst
+   ```
+3. Verify installation:
+   ```bash
+   kubectl envsubst --version
+   ```
+
+### Manual Installation
+
+1. Download the latest binary for your platform from
+   the [Releases page](https://github.com/hashmap-kz/kubectl-envsubst/releases).
+2. Place the binary in your system's `PATH` (e.g., `/usr/local/bin`).
+3. Verify installation:
+   ```bash
+   kubectl envsubst --version
+   ```
+
+---
+
+## **Usage**
+
+### Basic Variable Substitution
 
 ```bash
-# Other available architectures are linux_arm64, darwin_amd64, darwin_arm64, windows_amd64.
-export ARCH=linux_amd64
-# Check the latest version, https://github.com/hashmap-kz/kubectl-envsubst/releases/latest
-export VERSION=1.0.2
-wget -O- "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/v${VERSION}/kubectl-envsubst_${VERSION}_${ARCH}.tar.gz" | \
-  sudo tar -xzf - -C /usr/local/bin && \
-  sudo chmod +x /usr/local/bin/kubectl-envsubst
-```
+export IMAGE_TAG=v1.2.3
 
-From source.
-
-```bash
-go install github.com/hashmap-kz/kubectl-envsubst@latest
-sudo mv $GOPATH/bin/kubectl-envsubst /usr/local/bin
-```
-
-### Usage:
-
-```bash
-# substitute variables whose names start with one of the prefixes
-kubectl envsubst apply -f manifests/ --envsubst-allowed-prefixes=CI_,APP_
-
-# substitute well-defined variables
 kubectl envsubst apply -f manifests/ \
-    --envsubst-allowed-vars=CI_PROJECT_NAME,CI_COMMIT_REF_NAME,APP_IMAGE
+    --envsubst-allowed-vars=IMAGE_TAG
+```
 
-# mixed mode, check both full match and prefix match
+### Using Prefixes
+
+```bash
+export APP_PROJECT_NAME=auth-svc
+export APP_PROJECT_NAMESPACE=trade-system-prod
+export INFRA_DOMAIN_NAME=company.org
+
 kubectl envsubst apply -f manifests/ \
-    --envsubst-allowed-prefixes=CI_,APP_ \
-    --envsubst-allowed-vars=HOME,USER
-
-# example:
-export APP_NAME=nginx
-export APP_IMAGE_NAME=nginx
-export APP_IMAGE_TAG=latest
-kubectl envsubst apply -f testdata/subst/01.yaml \
-    --dry-run=client -oyaml \
-    --envsubst-allowed-prefixes=APP_
+    --envsubst-allowed-prefixes=APP_,INFRA_
 ```
 
-### Flags:
+### Mixed mode
+
+```bash
+export APP_PROJECT_NAME=auth-svc
+export APP_PROJECT_NAMESPACE=trade-system-prod
+export INFRA_DOMAIN_NAME=company.org
+export HOST=svc.company.org
+export PORT=1024
+
+kubectl envsubst apply -f manifests/ \
+    --envsubst-allowed-prefixes=APP_,INFRA_ \
+    --envsubst-allowed-vars=HOST,PORT
+```
+
+---
+
+## **Flags**:
 
 ```
---envsubst-allowed-vars 
-    Description: 
-        Consumes comma-separated list of names that allowed for expansion.
-        If a variable not in allowed list, it won't be expanded.
-    Example: --envsubst-allowed-prefixes=APP_,CI_
+--envsubst-allowed-vars=HOME,USER,PKEY_PATH,DB_PASS,IMAGE_NAME,IMAGE_TAG
+    Accepts a comma-separated list of variable names allowed for substitution. 
+    Variables not included in this list will not be substituted.
 
---envsubst-allowed-prefixes 
-    Description: 
-        Consumes comma-separated list of prefixes.
-        Variables whose names do not start with any prefix will be ignored.
-    Example: --envsubst-allowed-vars=HOME,USER,PKEY_PATH,DB_PASS,IMAGE_NAME,IMAGE_TAG
-
+--envsubst-allowed-prefixes=APP_,CI_ 
+    Accepts a comma-separated list of prefixes. 
+    Only variables with names starting with one of these prefixes will be substituted; others will be ignored.
+    
 --envsubst-no-strict
-    Description: 
-        Strict mode is ON by default. 
-        In 99% of cases, this is exactly what is required.
+    Disables strict-mode.
+    Strict mode is enabled by default, as it is the preferred setting in the majority of use cases (99% of the time).
 ```
 
-### Implementation details
+---
 
-Substitution of environmental variables without checking for inclusion in one of the filter list is not used
-intentionally, because this behavior can lead to subtle mistakes.
+## **Implementation details**
 
-If a variable is not found in the filter list and strict mode is not set, an error will not be returned, and this
-variable will not be replaced in the source text.
+Substitution of environment variables without verifying their inclusion in a filter list is intentionally
+avoided, as this behavior can lead to subtle errors.
 
-If the variable is not found in the filter list and strict mode is set, an error will be returned.
+If a variable is not found in the filter list and strict mode is disabled,
+no error will be returned, and the variable will remain unreplaced in the source text.
+Conversely, if strict mode is enabled (**it's enabled by default**) and the variable is not in the filter list, an error
+will be returned.
 
-It's totally fine - expanding manifests with all available env-vars, if your manifest contains a service and deployment
-with a few vars to substitute.
+Expanding manifests with all available environment variables can work fine
+for simple cases, such as when your manifest contains only a service and a deployment
+with a few variables to substitute.
+However, this approach becomes challenging to debug when dealing with more complex
+scenarios, such as applying dozens of manifests involving ConfigMaps, Secrets, CRDs, and other resources.
 
-But it will be a hard to debug, it you need to apply a few dozens manifests with config-maps, secrets, CRD's, etc...
+In such cases, you may not have complete confidence that all substitutions were
+performed as expected.
+For this reason, it’s better to explicitly control which variables are substituted by using a filter list.
 
-It that case you won't be absolutely sure that everything will be placed as expected.
+---
 
-That's why it's better to control the amount of variables that may be substituted.
+## **Usage scenario in CI/CD**
 
-### Usage scenario in CI/CD
-
-A typical setup (with dev/stage/prod environments) for a typical microservice may look like this:
+A typical setup for a microservice with dev, stage, and prod environments may look like this:
 
 ```
 .
@@ -129,19 +148,20 @@ A typical setup (with dev/stage/prod environments) for a typical microservice ma
 ├── README.md
 ```
 
-Where for each environment (dev, stage, prod) there are a bunch of k8s-manifests.
+Each environment (dev, stage, prod) typically includes a set of Kubernetes manifests.
+These manifests may differ between environments in minor ways, such as image names in the registry,
+or more significantly, with specific resources like HPAs or secrets for production.
 
-They may vary between environments just in naming (image name in registry), or may contain specific resources (hpa and secrets for prod).
+However, most parts of the manifests, such as services, deployments, ingresses, secrets,
+labels, and naming conventions, are often duplicated across environments.
+These duplicated elements can easily be replaced using environment variables in your CI/CD pipeline.
 
-But the main part is duplicated (service, deployment, ingress, secrets, labels, naming conventions, etc...).
+The specific CI/CD tool you use doesn’t matter, as each tool may provide different
+variable names and patterns. In this example, project details like name, path, and
+labels remain consistent across environments, while variables like image names or
+environment-specific resources can be adjusted based on your needs.
 
-And all these duplicated parts may be substituted from env-vars in a pipeline you use.
-
-The tool that you use for CI/CD does not matter, each tool may provide different var-names and patterns.
-
-In this example, a project name, its path, labels are the same for all environments.
-
-Only the image name will be different, and perhaps you may also include specific resources, depends on your needs.
+A set of application deployment manifests:
 
 ```yaml
 ---
@@ -200,34 +220,7 @@ spec:
                 name: *app
 ```
 
-Let's assume that we deploy our application by using gitlab-ci (the tool does not matter, just an example).
-
-This bash script is used as an example that illustrates if we have env-vars in the context we deploy our application - then we may use these vars in our manifests.
-
-```bash
-# gitlab-specific variables, that defined in each pipeline 
-# we simulate that pipeline by setting them by hand
-export CI_REGISTRY=mirror-0.company.org:5000
-export CI_PROJECT_ROOT_NAMESPACE=banking-system-envsubst-test
-export CI_PROJECT_NAMESPACE=backend/auth-svc
-export CI_PROJECT_PATH=banking-system-envsubst-test/backend/auth-svc
-export CI_PROJECT_NAME=auth-svc
-export CI_COMMIT_REF_NAME=dev
-
-# project-specific variables (may be passed to pipeline from secrets, project/group variables, combined from other vars, etc...)
-# nginx image is used for simplicity, of course there will be your images, that was pushed to your repo in build-step
-export APP_IMAGE=nginx
-export APP_NAMESPACE="${CI_PROJECT_ROOT_NAMESPACE}-${CI_COMMIT_REF_NAME}"
-export INFRA_DOMAIN_NAME=company.org
-
-# prepare namespace and context
-kubectl create ns "${APP_NAMESPACE}" --dry-run=client -oyaml | kubectl apply -f -
-kubectl config set-context --current --namespace="${APP_NAMESPACE}"
-
-# expand and apply manifests
-kubectl envsubst apply -f "k8s-manifests/${CI_COMMIT_REF_NAME}" \
-  --envsubst-allowed-prefixes=CI_,APP_,INFRA_
-```
+Let’s assume we’re deploying our application using GitLab CI (the specific tool doesn’t matter, it’s just an example).
 
 The CI/CD stage may look like this:
 
@@ -254,11 +247,41 @@ deploy:
     - kubectl rollout restart deploy "${CI_PROJECT_NAME}"
 ```
 
-> As a result - we use plain kubernetes manifests, without any 'magic-preprocessing-tricks', and environment variables for
-> handling application deploy in different environments (dev, stage, prod, etc...).
-> 
-> The main point - that we're totally sure that the variable substitution is managed and predictable.
-> 
-> If our application contains a configmap for nginx (that uses $ sign a LOT), we're absolutely sure that there will be
-> no substitutions, if we're not allow it explicitly by adding collide variables in allow-list of prefix-list.
+---
 
+## **Brief conclusion**
+
+We use plain Kubernetes manifests without any complex preprocessing, relying on environment variables to
+manage deployments across different environments (dev, stage, prod, etc.).
+
+This approach ensures variable substitution is controlled and predictable.
+For example, if an application includes a ConfigMap for Nginx (which uses $ frequently),
+substitutions won’t occur unless explicitly allowed by adding the relevant variables to
+an allow-list or prefix-list.
+
+---
+
+## **Contributing**
+
+We welcome contributions! To contribute:
+
+1. Fork the repository.
+2. Create a new branch for your feature or bug fix.
+3. Submit a pull request describing your changes.
+
+---
+
+## **License**
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+## **Additional Resources**
+
+- [Kubernetes Documentation: Managing Resources](https://kubernetes.io/docs/concepts/cluster-administration/manage-deployment/)
+- [Using Environment Variables in CI/CD](https://12factor.net/config)
+
+For more information, visit the [project repository](https://github.com/hashmap-kz/kubectl-envsubst).
+
+---
