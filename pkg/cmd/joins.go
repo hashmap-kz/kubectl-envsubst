@@ -9,6 +9,12 @@ import (
 func JoinFiles(flags *CmdFlagsProxy) ([]byte, error) {
 	buf := bytes.Buffer{}
 
+	totalFiles := len(flags.Filenames)
+	if flags.HasStdin {
+		totalFiles += 1
+	}
+	needSeparator := totalFiles > 1
+
 	// process STDIN
 	if flags.HasStdin {
 		stdin, err := io.ReadAll(os.Stdin)
@@ -22,8 +28,7 @@ func JoinFiles(flags *CmdFlagsProxy) ([]byte, error) {
 		}
 
 		buf.WriteString(substituted)
-		// append separator, ONLY if there are other files, passed by --filename=pod.yaml
-		if len(flags.Filenames) > 0 {
+		if needSeparator {
 			buf.WriteString("\n---\n")
 		}
 	}
@@ -43,7 +48,7 @@ func JoinFiles(flags *CmdFlagsProxy) ([]byte, error) {
 		}
 
 		buf.WriteString(substituted)
-		if len(flags.Filenames) > 1 {
+		if needSeparator {
 			buf.WriteString("\n---\n")
 		}
 	}

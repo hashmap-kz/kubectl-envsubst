@@ -13,3 +13,6 @@ export ENVSUBST_ALLOWED_PREFIXES='CI_,APP_,INFRA_'
 
 # expand and apply manifests
 kubectl envsubst apply -f manifests/
+
+# restore context
+kubectl config set-context --current --namespace="default"

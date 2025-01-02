@@ -10,3 +10,6 @@ kubectl config set-context --current --namespace="${APP_NAMESPACE}"
 
 # expand and apply manifests
 kubectl envsubst apply -f manifests/ --envsubst-allowed-prefixes=CI_,APP_,INFRA_
+
+# restore context
+kubectl config set-context --current --namespace="default"

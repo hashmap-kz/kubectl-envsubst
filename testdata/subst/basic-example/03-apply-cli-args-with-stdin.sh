@@ -14,3 +14,6 @@ cat separated/service.yaml | kubectl envsubst apply \
   --filename=separated/deployment.yaml \
   -f separated/secret.yaml \
   --envsubst-allowed-prefixes=CI_,APP_,INFRA_
+
+# restore context
+kubectl config set-context --current --namespace="default"
