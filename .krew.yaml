@@ -14,33 +14,33 @@ spec:
     Just handles specially two main options --filename and --recursive.
     All other options are passed as is.
   platforms:
-    - selector:
-        matchLabels:
-          os: darwin
-          arch: amd64
-      {{addURIAndSha "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/{{ .TagName }}/kubectl-envsubst_{{ .TagName }}_darwin_amd64.tar.gz" .TagName }}
-      bin: kubectl-envsubst
-    - selector:
-        matchLabels:
-          os: darwin
-          arch: arm64
-      {{addURIAndSha "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/{{ .TagName }}/kubectl-envsubst_{{ .TagName }}_darwin_arm64.tar.gz" .TagName }}
-      bin: kubectl-envsubst
-    - selector:
-        matchLabels:
-          os: linux
-          arch: amd64
-      {{addURIAndSha "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/{{ .TagName }}/kubectl-envsubst_{{ .TagName }}_linux_amd64.tar.gz" .TagName }}
-      bin: kubectl-envsubst
-    - selector:
-        matchLabels:
-          os: linux
-          arch: arm64
-      {{addURIAndSha "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/{{ .TagName }}/kubectl-envsubst_{{ .TagName }}_linux_arm64.tar.gz" .TagName }}
-      bin: kubectl-envsubst
-    - selector:
-        matchLabels:
-          os: windows
-          arch: amd64
-      {{addURIAndSha "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/{{ .TagName }}/kubectl-envsubst_{{ .TagName }}_windows_amd64.tar.gz" .TagName }}
-      bin: kubectl-envsubst.exe
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: amd64
+    {{addURIAndSha "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/{{ .TagName }}/kubectl-envsubst_{{ .TagName }}_darwin_amd64.tar.gz" .TagName }}
+    bin: kubectl-envsubst
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: arm64
+    {{addURIAndSha "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/{{ .TagName }}/kubectl-envsubst_{{ .TagName }}_darwin_arm64.tar.gz" .TagName }}
+    bin: kubectl-envsubst
+  - selector:
+      matchLabels:
+        os: linux
+        arch: amd64
+    {{addURIAndSha "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/{{ .TagName }}/kubectl-envsubst_{{ .TagName }}_linux_amd64.tar.gz" .TagName }}
+    bin: kubectl-envsubst
+  - selector:
+      matchLabels:
+        os: linux
+        arch: arm64
+    {{addURIAndSha "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/{{ .TagName }}/kubectl-envsubst_{{ .TagName }}_linux_arm64.tar.gz" .TagName }}
+    bin: kubectl-envsubst
+  - selector:
+      matchLabels:
+        os: windows
+        arch: amd64
+    {{addURIAndSha "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/{{ .TagName }}/kubectl-envsubst_{{ .TagName }}_windows_amd64.tar.gz" .TagName }}
+    bin: kubectl-envsubst.exe
