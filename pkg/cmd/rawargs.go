@@ -129,7 +129,7 @@ func parseArgs() (CmdArgsRawRecognized, error) {
 		if value, exists := os.LookupEnv(envsubstAllowedVarsEnv); exists {
 			split := strings.Split(value, ",")
 			if allEmpty(split) {
-				return result, fmt.Errorf("missing value for env %s", envsubstAllowedVarsEnv)
+				return result, fmt.Errorf("missing value for env: %s", envsubstAllowedVarsEnv)
 			}
 			result.EnvsubstAllowedVars = split
 		}
@@ -140,7 +140,7 @@ func parseArgs() (CmdArgsRawRecognized, error) {
 		if value, exists := os.LookupEnv(envsubstAllowedPrefixesEnv); exists {
 			split := strings.Split(value, ",")
 			if allEmpty(split) {
-				return result, fmt.Errorf("missing value for env %s", envsubstAllowedPrefixesEnv)
+				return result, fmt.Errorf("missing value for env: %s", envsubstAllowedPrefixesEnv)
 			}
 			result.EnvsubstAllowedPrefix = split
 		}

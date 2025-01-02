@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -270,5 +271,28 @@ func TestParseArgs_CmdAndEnvFlags(t *testing.T) {
 		if result.EnvsubstAllowedPrefix[i] != prefix {
 			t.Errorf("Expected allowed prefix %s, got %s", prefix, result.EnvsubstAllowedPrefix[i])
 		}
+	}
+}
+
+func TestParseArgs_EmptyEnvVars(t *testing.T) {
+	// Set empty environment variables
+	os.Setenv("ENVSUBST_ALLOWED_VARS", "")
+	os.Setenv("ENVSUBST_ALLOWED_PREFIXES", "")
+	defer os.Unsetenv("ENVSUBST_ALLOWED_VARS")
+	defer os.Unsetenv("ENVSUBST_ALLOWED_PREFIXES")
+
+	os.Args = []string{"cmd"}
+	_, err := parseArgs()
+
+	// Expect an error due to empty environment variables
+	if err == nil {
+		t.Fatal("Expected an error for empty environment variables, but got none")
+	}
+
+	expectedErrorVars := "missing value for env: ENVSUBST_ALLOWED_VARS"
+	expectedErrorPrefixes := "missing value for env: ENVSUBST_ALLOWED_PREFIXES"
+
+	if !strings.Contains(err.Error(), expectedErrorVars) && !strings.Contains(err.Error(), expectedErrorPrefixes) {
+		t.Errorf("Expected error to mention missing values for ENVSUBST_ALLOWED_VARS or ENVSUBST_ALLOWED_PREFIXES, got '%s'", err.Error())
 	}
 }
