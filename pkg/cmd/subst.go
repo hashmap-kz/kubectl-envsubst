@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"regexp"
 	"sort"
@@ -17,6 +18,7 @@ type Envsubst struct {
 	allowedVars     []string
 	allowedPrefixes []string
 	strict          bool
+	verbose         bool
 }
 
 func NewEnvsubst(allowedVars []string, allowedPrefixes []string, strict bool) *Envsubst {
@@ -62,14 +64,17 @@ func (p *Envsubst) SubstituteEnvs(text string) (string, error) {
 	})
 
 	// Handle strict mode by detecting unresolved variables
+	// Returns error, if and only if an unresolved variable is from one of the filter-list.
+	// Ignoring other unexpanded variables, that may be a parts of config-maps, etc...
+	//
 	if p.strict {
 		unresolved := envVarRegex.FindAllString(substituted, -1)
 
-		sort.Strings(unresolved)
-		if len(unresolved) > 0 {
+		// if an unresolved variable is supposed to be substituted but is not, it is considered an error
+		filterUnresolved := p.filterUnresolvedByAllowedLists(unresolved)
+		if len(filterUnresolved) > 0 {
 			sb := strings.Builder{}
-			for _, k := range unresolved {
-				k := strings.Trim(k, "${}")
+			for _, k := range filterUnresolved {
 				if !strings.Contains(sb.String(), k) {
 					sb.WriteString(k + ", ")
 				}
@@ -77,7 +82,72 @@ func (p *Envsubst) SubstituteEnvs(text string) (string, error) {
 			resultList := strings.TrimSpace(sb.String())
 			return "", fmt.Errorf("undefined variables: [%s]", strings.TrimSuffix(resultList, ","))
 		}
+
+		// verbose mode here: if there are unexpanded placeholders, it's not an error, just debug-info
+		// it's not an error, because these placeholders are not in filter lists, so they remain unchanged
+		if p.verbose {
+			sortUnresolved := p.sortUnresolved(unresolved)
+			for _, u := range sortUnresolved {
+				log.Printf("DEBUG: an unresolved variable that is not in the filter list remains unchanged: %s", u)
+			}
+		}
 	}
 
 	return substituted, nil
+}
+
+func (p *Envsubst) SetVerbose(value bool) {
+	p.verbose = value
+}
+
+func (p *Envsubst) sortUnresolved(input []string) []string {
+	result := []string{}
+	for _, v := range input {
+		v := strings.Trim(v, "${}")
+		if varInSlice(v, result) {
+			continue
+		}
+		result = append(result, v)
+	}
+	sort.Strings(result)
+	return result
+}
+
+func (p *Envsubst) filterUnresolvedByAllowedLists(input []string) []string {
+	result := []string{}
+	for _, v := range input {
+		v := strings.Trim(v, "${}")
+		if !p.isInFilter(v) {
+			continue
+		}
+		if varInSlice(v, result) {
+			continue
+		}
+		result = append(result, v)
+	}
+	sort.Strings(result)
+	return result
+}
+
+func (p *Envsubst) isInFilter(e string) bool {
+	for _, allowed := range p.allowedVars {
+		if e == allowed {
+			return true
+		}
+	}
+	for _, prefix := range p.allowedPrefixes {
+		if strings.HasPrefix(e, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func varInSlice(target string, slice []string) bool {
+	for _, s := range slice {
+		if s == target {
+			return true
+		}
+	}
+	return false
 }
