@@ -53,6 +53,16 @@ metadata:
   name: &app ${CI_PROJECT_NAME}
   labels:
     app: *app
+  annotations:
+    # In some cases, a manifest may include placeholders that are not meant to be expanded.
+    some.controller.annotation/snippet: |
+      set $agentflag 0;
+      if ($http_user_agent ~* "(Android|iPhone|Windows Phone|UC|Kindle)" ) {
+        set $agentflag 1;
+      }
+      if ( $agentflag = 1 ) {
+        return 301 http://m.company.org;
+      }
 spec:
   replicas: 1
   selector:

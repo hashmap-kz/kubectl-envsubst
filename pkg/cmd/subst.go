@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"regexp"
 	"sort"
@@ -17,6 +18,7 @@ type Envsubst struct {
 	allowedVars     []string
 	allowedPrefixes []string
 	strict          bool
+	verbose         bool
 }
 
 func NewEnvsubst(allowedVars []string, allowedPrefixes []string, strict bool) *Envsubst {
@@ -68,7 +70,8 @@ func (p *Envsubst) SubstituteEnvs(text string) (string, error) {
 	if p.strict {
 		unresolved := envVarRegex.FindAllString(substituted, -1)
 
-		filterUnresolved := p.filterUnresolvedByAllowedFilters(unresolved)
+		// if an unresolved variable is supposed to be substituted but is not, it is considered an error
+		filterUnresolved := p.filterUnresolvedByAllowedLists(unresolved)
 		if len(filterUnresolved) > 0 {
 			sb := strings.Builder{}
 			for _, k := range filterUnresolved {
@@ -80,13 +83,37 @@ func (p *Envsubst) SubstituteEnvs(text string) (string, error) {
 			return "", fmt.Errorf("undefined variables: [%s]", strings.TrimSuffix(resultList, ","))
 		}
 
-		// TODO: verbose mode here: if there are unexpanded placeholders, it's not an error, just warn/info
+		// verbose mode here: if there are unexpanded placeholders, it's not an error, just debug-info
+		// it's not an error, because these placeholders are not in filter lists, so they remain unchanged
+		if p.verbose {
+			sortUnresolved := p.sortUnresolved(unresolved)
+			for _, u := range sortUnresolved {
+				log.Printf("DEBUG: an unresolved variable that is not in the filter list remains unchanged: %s", u)
+			}
+		}
 	}
 
 	return substituted, nil
 }
 
-func (p *Envsubst) filterUnresolvedByAllowedFilters(input []string) []string {
+func (p *Envsubst) SetVerbose(value bool) {
+	p.verbose = value
+}
+
+func (p *Envsubst) sortUnresolved(input []string) []string {
+	result := []string{}
+	for _, v := range input {
+		v := strings.Trim(v, "${}")
+		if varInSlice(v, result) {
+			continue
+		}
+		result = append(result, v)
+	}
+	sort.Strings(result)
+	return result
+}
+
+func (p *Envsubst) filterUnresolvedByAllowedLists(input []string) []string {
 	result := []string{}
 	for _, v := range input {
 		v := strings.Trim(v, "${}")
