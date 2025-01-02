@@ -296,3 +296,106 @@ func TestParseArgs_EmptyEnvVars(t *testing.T) {
 		t.Errorf("Expected error to mention missing values for ENVSUBST_ALLOWED_VARS or ENVSUBST_ALLOWED_PREFIXES, got '%s'", err.Error())
 	}
 }
+
+func TestParseArgs_SingleStdin(t *testing.T) {
+	os.Args = []string{"cmd", "--filename", "-"}
+	result, err := parseArgs()
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	if !result.HasStdin {
+		t.Errorf("Expected HasStdin to be true")
+	}
+
+	if len(result.Filenames) != 0 {
+		t.Errorf("Expected Filenames to be empty, got: %v", result.Filenames)
+	}
+}
+
+func TestParseArgs_MultipleStdin(t *testing.T) {
+	os.Args = []string{"cmd", "--filename", "-", "-f", "-"}
+	_, err := parseArgs()
+
+	if err == nil {
+		t.Fatal("Expected an error for multiple stdin redirection, but got none")
+	}
+
+	expectedError := "multiple redirection to stdin detected"
+	if err.Error() != expectedError {
+		t.Errorf("Expected error '%s', got '%s'", expectedError, err.Error())
+	}
+}
+
+func TestParseArgs_EmptyFilename(t *testing.T) {
+	os.Args = []string{"cmd", "--filename="}
+	_, err := parseArgs()
+
+	if err == nil {
+		t.Fatal("Expected an error for empty filename, but got none")
+	}
+
+	expectedError := "missing value for flag --filename="
+	if err.Error() != expectedError {
+		t.Errorf("Expected error '%s', got '%s'", expectedError, err.Error())
+	}
+}
+
+func TestParseArgs_FilenamesProvided(t *testing.T) {
+	os.Args = []string{"cmd", "--filename=pod.yaml", "-f=config.yaml", "--filename", "app.yaml"}
+	result, err := parseArgs()
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	expectedFilenames := []string{"pod.yaml", "config.yaml", "app.yaml"}
+	if len(result.Filenames) != len(expectedFilenames) {
+		t.Errorf("Expected filenames %v, got %v", expectedFilenames, result.Filenames)
+	}
+	for i, filename := range expectedFilenames {
+		if result.Filenames[i] != filename {
+			t.Errorf("Expected filename %s, got %s", filename, result.Filenames[i])
+		}
+	}
+}
+
+func TestParseArgs_NoFilenames(t *testing.T) {
+	os.Args = []string{"cmd"}
+	result, err := parseArgs()
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	if len(result.Filenames) != 0 {
+		t.Errorf("Expected Filenames to be empty, got: %v", result.Filenames)
+	}
+	if result.HasStdin {
+		t.Errorf("Expected HasStdin to be false")
+	}
+}
+
+func TestParseArgs_StdinAndFile(t *testing.T) {
+	os.Args = []string{"cmd", "--filename=-", "-f=pod.yaml"}
+	result, err := parseArgs()
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	if !result.HasStdin {
+		t.Errorf("Expected HasStdin to be true")
+	}
+
+	expectedFilenames := []string{"pod.yaml"}
+	if len(result.Filenames) != len(expectedFilenames) {
+		t.Errorf("Expected filenames %v, got %v", expectedFilenames, result.Filenames)
+	}
+	for i, filename := range expectedFilenames {
+		if result.Filenames[i] != filename {
+			t.Errorf("Expected filename %s, got %s", filename, result.Filenames[i])
+		}
+	}
+}
