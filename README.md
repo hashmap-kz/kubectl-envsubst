@@ -133,7 +133,7 @@ kubectl envsubst apply -f manifests/ \
 
 ---
 
-### **Behavior: CLI Takes Precedence Over Environment Variables**
+### **NOTE: CLI Takes Precedence Over Environment Variables**
 
 - **Priority**: If both CLI flags and environment variables are set:
     - **CLI flags** (`--envsubst-allowed-vars`, `--envsubst-allowed-prefixes`) will **override** their respective
