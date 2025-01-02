@@ -2,33 +2,105 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
+	"io"
+	"net/http"
 	"os"
 )
 
 func JoinFiles(flags *CmdFlagsProxy) ([]byte, error) {
 	buf := bytes.Buffer{}
 
-	for _, f := range flags.Filenames {
+	totalFiles := len(flags.Filenames)
+	if flags.HasStdin {
+		totalFiles += 1
+	}
+	needSeparator := totalFiles > 1
+	const separator = "\n---\n"
 
-		// get file data
+	// process STDIN
+	if flags.HasStdin {
+		stdin, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			return nil, err
+		}
+		substituted, err := substBuf(flags, stdin)
+		if err != nil {
+			return nil, err
+		}
+		buf.WriteString(substituted)
+		if needSeparator {
+			buf.WriteString(separator)
+		}
+	}
+
+	// process files
+	for _, f := range flags.Filenames {
+		// passed as URL
+		if IsURL(f) {
+			data, err := readRemote(f)
+			if err != nil {
+				return nil, err
+			}
+			substituted, err := substBuf(flags, data)
+			if err != nil {
+				return nil, err
+			}
+			buf.WriteString(substituted)
+			if needSeparator {
+				buf.WriteString(separator)
+			}
+			continue
+		}
+
+		// plain file
 		file, err := os.ReadFile(f)
 		if err != nil {
 			return nil, err
 		}
-
-		// substitute environment variables
-		// strict mode is always ON
-		envSubst := NewEnvsubst(flags.EnvsubstAllowedVars, flags.EnvsubstAllowedPrefix, true)
-		substituted, err := envSubst.SubstituteEnvs(string(file))
+		substituted, err := substBuf(flags, file)
 		if err != nil {
 			return nil, err
 		}
-
 		buf.WriteString(substituted)
-		if len(flags.Filenames) > 1 {
-			buf.WriteString("\n---\n")
+		if needSeparator {
+			buf.WriteString(separator)
 		}
 	}
 
 	return buf.Bytes(), nil
+}
+
+func readRemote(url string) ([]byte, error) {
+
+	// Make the HTTP GET request
+	response, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	// Check for HTTP errors
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("cannot GET file content from: %s", url)
+	}
+
+	// Read the response body
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
+}
+
+func substBuf(flags *CmdFlagsProxy, data []byte) (string, error) {
+	// substitute environment variables
+	// strict mode is always ON
+	envSubst := NewEnvsubst(flags.EnvsubstAllowedVars, flags.EnvsubstAllowedPrefix, true)
+	substituted, err := envSubst.SubstituteEnvs(string(data))
+	if err != nil {
+		return "", err
+	}
+	return substituted, nil
 }
