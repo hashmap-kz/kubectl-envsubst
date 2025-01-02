@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"log"
 	"os"
 	"strings"
 	"testing"
@@ -719,6 +720,240 @@ spec:
 
 			if output != test.expected {
 				t.Errorf("Test %q failed: expected %q, got %q", test.name, test.expected, output)
+			}
+		})
+	}
+}
+
+func TestSubstituteEnvs_StrictMode_ErrorForFilteredUnresolved(t *testing.T) {
+	os.Setenv("VAR1", "value1")
+	defer os.Unsetenv("VAR1")
+
+	envsubst := NewEnvsubst([]string{"VAR1", "VAR2"}, []string{}, true)
+
+	text := "Hello $VAR1 and ${VAR2} and ${VAR3}!"
+	_, err := envsubst.SubstituteEnvs(text)
+
+	if err == nil {
+		t.Fatal("Expected an error for unresolved variables in filter, but got none")
+	}
+
+	expectedError := "undefined variables: [VAR2]"
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("Expected error containing '%s', got '%s'", expectedError, err.Error())
+	}
+}
+
+func TestSubstituteEnvs_VerboseMode_DebugUnresolvedVars(t *testing.T) {
+	os.Setenv("VAR1", "value1")
+	defer os.Unsetenv("VAR1")
+
+	envsubst := NewEnvsubst([]string{"VAR1"}, []string{}, true)
+	envsubst.SetVerbose(true)
+
+	logBuffer := strings.Builder{}
+	log.SetOutput(&logBuffer)
+
+	text := "Hello $VAR1 and ${VAR2}!"
+	_, _ = envsubst.SubstituteEnvs(text)
+
+	logBuf := logBuffer.String()
+	if !strings.Contains(logBuf, "DEBUG: an unresolved variable that is not in the filter list remains unchanged: VAR2") {
+		t.Error("Expected debug log for unresolved variable not in filter list")
+	}
+}
+
+func TestSubstituteEnvs_UnresolvedVarsNotInFilter_NoError(t *testing.T) {
+	os.Setenv("VAR1", "value1")
+	defer os.Unsetenv("VAR1")
+
+	envsubst := NewEnvsubst([]string{"VAR1"}, []string{}, true)
+
+	text := "Hello $VAR1 and ${VAR3}!"
+	result, err := envsubst.SubstituteEnvs(text)
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	expected := "Hello value1 and ${VAR3}!"
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
+	}
+}
+
+func TestSubstituteEnvs_FilteredPrefixes_UnresolvedError(t *testing.T) {
+	os.Setenv("APP_VAR1", "value1")
+	defer os.Unsetenv("APP_VAR1")
+
+	envsubst := NewEnvsubst([]string{}, []string{"APP_"}, true)
+
+	text := "Hello $APP_VAR1 and ${APP_VAR2}!"
+	_, err := envsubst.SubstituteEnvs(text)
+
+	if err == nil {
+		t.Fatal("Expected an error for unresolved variable with allowed prefix, but got none")
+	}
+
+	expectedError := "undefined variables: [APP_VAR2]"
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("Expected error containing '%s', got '%s'", expectedError, err.Error())
+	}
+}
+
+func TestSubstituteEnvs_AllResolved(t *testing.T) {
+	os.Setenv("VAR1", "value1")
+	os.Setenv("VAR2", "value2")
+	defer os.Unsetenv("VAR1")
+	defer os.Unsetenv("VAR2")
+
+	envsubst := NewEnvsubst([]string{"VAR1", "VAR2"}, []string{}, true)
+
+	text := "Hello $VAR1 and ${VAR2}!"
+	expected := "Hello value1 and value2!"
+	result, err := envsubst.SubstituteEnvs(text)
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
+	}
+}
+
+func TestSubstituteEnvs_NoFilter_NoErrorForUnresolved(t *testing.T) {
+	os.Setenv("VAR1", "value1")
+	defer os.Unsetenv("VAR1")
+
+	envsubst := NewEnvsubst([]string{}, []string{}, false)
+
+	text := "Hello $VAR1 and ${VAR3}!"
+	expected := "Hello $VAR1 and ${VAR3}!"
+	result, err := envsubst.SubstituteEnvs(text)
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
+	}
+}
+
+func TestSubstituteEnvs_EmptyInput(t *testing.T) {
+	envsubst := NewEnvsubst([]string{}, []string{}, true)
+
+	text := ""
+	expected := ""
+	result, err := envsubst.SubstituteEnvs(text)
+
+	if err != nil {
+		t.Fatalf("Unexpected error for empty input: %v", err)
+	}
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
+	}
+}
+
+func TestSubstituteEnvs_EmptyAllowedLists(t *testing.T) {
+	os.Setenv("VAR1", "value1")
+	defer os.Unsetenv("VAR1")
+
+	envsubst := NewEnvsubst([]string{}, []string{}, true)
+
+	text := "Hello $VAR1!"
+	expected := "Hello $VAR1!"
+	result, err := envsubst.SubstituteEnvs(text)
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
+	}
+}
+
+func TestSubstituteEnvs_NoEnvVarsSet(t *testing.T) {
+	envsubst := NewEnvsubst([]string{"VAR1"}, []string{}, true)
+
+	text := "Hello $VAR1!"
+	_, err := envsubst.SubstituteEnvs(text)
+
+	if err == nil {
+		t.Fatal("Expected an error for unresolved variables, but got none")
+	}
+}
+
+func TestSubstituteEnvs_OverlappingPrefixes(t *testing.T) {
+	os.Setenv("APP_VAR1", "value1")
+	os.Setenv("APP_VAR2", "value2")
+	defer os.Unsetenv("APP_VAR1")
+	defer os.Unsetenv("APP_VAR2")
+
+	envsubst := NewEnvsubst([]string{}, []string{"APP_", "APP_VAR"}, true)
+
+	text := "Hello $APP_VAR1 and ${APP_VAR2}!"
+	expected := "Hello value1 and value2!"
+	result, err := envsubst.SubstituteEnvs(text)
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
+	}
+}
+
+func TestSubstituteEnvs_StrictMode_MixedFilters(t *testing.T) {
+	os.Setenv("VAR1", "value1")
+	os.Setenv("APP_VAR2", "value2")
+	defer os.Unsetenv("VAR1")
+	defer os.Unsetenv("APP_VAR2")
+
+	envsubst := NewEnvsubst([]string{"VAR1"}, []string{"APP_"}, true)
+
+	text := "Hello $VAR1 and ${APP_VAR2} and ${VAR3}!"
+	result, err := envsubst.SubstituteEnvs(text)
+
+	// Should not raise an error since unresolved ${VAR3} is not in filters
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	expected := "Hello value1 and value2 and ${VAR3}!"
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
+	}
+}
+
+func TestSubstituteEnvs_MalformedPlaceholders(t *testing.T) {
+	envsubst := NewEnvsubst([]string{"VAR1"}, []string{"APP_"}, true)
+
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		// Malformed placeholders that should remain unchanged
+		{"Hello $!", "Hello $!"},
+		{"Hello ${}", "Hello ${}"},
+		{"Hello $123", "Hello $123"},
+		{"Hello ${123VAR}", "Hello ${123VAR}"},
+		{"Hello $VAR!", "Hello $VAR!"},
+		// Correct placeholders that should be substituted
+		{"Hello $VAR1!", "Hello value1!"},
+	}
+
+	// Set environment variable
+	os.Setenv("VAR1", "value1")
+	defer os.Unsetenv("VAR1")
+
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			result, err := envsubst.SubstituteEnvs(test.input)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+			if result != test.expected {
+				t.Errorf("Expected '%s', got '%s'", test.expected, result)
 			}
 		})
 	}
