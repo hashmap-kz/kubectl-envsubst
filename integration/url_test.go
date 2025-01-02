@@ -8,16 +8,17 @@ import (
 	"testing"
 )
 
-func TestEnvsubstIntegrationFromStdin(t *testing.T) {
+func TestEnvsubstIntegrationFromUrl(t *testing.T) {
 
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
-		t.Log("integration test was skipped due to configuration")
+		t.Log("Integration test was skipped due to configuration")
 		return
 	}
 
 	t.Log("running integration test: ", t.Name())
 	printInfo(t)
 
+	const url = "https://raw.githubusercontent.com/hashmap-kz/kubectl-envsubst/refs/heads/integ/integration/immutable_data/01_deployment.yaml"
 	resourceName := randomIdent(32)
 	defer cleanupResource(t, "deployment", resourceName)
 
@@ -33,34 +34,9 @@ func TestEnvsubstIntegrationFromStdin(t *testing.T) {
 	os.Setenv("ENVSUBST_ALLOWED_PREFIXES", "CI_,IMAGE_")
 	defer os.Unsetenv("ENVSUBST_ALLOWED_PREFIXES")
 
-	// Prepare input manifest
-	manifest := `
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: &app ${CI_PROJECT_NAME}
-  labels:
-    app: *app
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: *app
-  template:
-    metadata:
-      labels:
-        app: *app
-    spec:
-      containers:
-        - name: *app
-          image: $IMAGE_NAME:$IMAGE_TAG
-          imagePullPolicy: Always
-`
-
 	// Run kubectl-envsubst
-	cmdEnvsubstApply := exec.Command("kubectl", "envsubst", "apply", "-f", "-")
-	cmdEnvsubstApply.Stdin = strings.NewReader(manifest)
+
+	cmdEnvsubstApply := exec.Command("kubectl", "envsubst", "apply", "-f", url)
 	output, err := cmdEnvsubstApply.CombinedOutput()
 	if err != nil {
 		t.Fatalf("Failed to run kubectl envsubst: %v, output: %s", err, string(output))
