@@ -16,7 +16,8 @@ func TestEnvsubstIntegrationFromStdin(t *testing.T) {
 		return
 	}
 
-	resourceName := RandomIdent(32)
+	resourceName := randomIdent(32)
+	defer cleanupResource("deployment", resourceName)
 
 	// Setup environment variables that was used in substitution
 	os.Setenv("IMAGE_NAME", "nginx")
@@ -62,7 +63,7 @@ spec:
 	if err != nil {
 		t.Fatalf("Failed to run kubectl envsubst: %v, output: %s", err, string(output))
 	}
-	fmt.Println(string(output))
+	log.Println(string(output))
 
 	// Check result (it should be created/updated/unchanged, etc...)
 	expectedOutput := strings.Contains(string(output), fmt.Sprintf("deployment.apps/%s", resourceName))
@@ -80,11 +81,4 @@ spec:
 		t.Errorf("Expected deployment 'kubectl-envsubst-integration-test' to exist, got %s", string(validateOutput))
 	}
 
-	// cleanup
-	cmdDelete := exec.Command("kubectl", "delete", "deploy", resourceName)
-	outputDel, err := cmdDelete.CombinedOutput()
-	if err != nil {
-		t.Fatalf("Failed to cleanup: %v, output: %s", err, string(output))
-	}
-	fmt.Println(string(outputDel))
 }
