@@ -100,7 +100,12 @@ kubectl envsubst apply -f manifests/ \
 
 ---
 
-## **Implementation details**
+## **Variable Expansion and Filtering Behavior**
+
+### **Description**
+
+The behavior of variable substitution is determined by the inclusion of variables in the `--envsubst-allowed-vars` or
+`--envsubst-allowed-prefixes` lists and whether the variables remain unresolved.
 
 Substitution of environment variables without verifying their inclusion in a filter list is intentionally
 avoided, as this behavior can lead to subtle errors.
@@ -116,6 +121,34 @@ scenarios, such as applying dozens of manifests involving ConfigMaps, Secrets, C
 In such cases, you may not have complete confidence that all substitutions were
 performed as expected.
 For this reason, it’s better to explicitly control which variables are substituted by using a filter list.
+
+### **Behavior**:
+
+1. **Variables in Filters (Allowed for Substitution):**
+    - If a variable is included in either the `--envsubst-allowed-vars` list or matches a prefix in the
+      `--envsubst-allowed-prefixes` list but remains unexpanded:
+        - This will result in an **error** during the substitution process.
+        - The error occurs to ensure that all explicitly allowed variables are resolved.
+
+2. **Variables Not in Filters (Not Allowed for Substitution):**
+    - If a variable is not included in the `--envsubst-allowed-vars` list and does not match any prefixes in the
+      `--envsubst-allowed-prefixes` list:
+        - The variable will remain unexpanded.
+        - This will not trigger an error during the substitution process but **may cause an error during the deploying
+          of the manifest** if the unresolved placeholder is incompatible with Kubernetes.
+        - In this example, placeholders within annotations are
+          not expanded unless explicitly allowed via `--envsubst-allowed-vars` or `--envsubst-allowed-prefixes`.
+          And this behavior is exactly what is expected.
+          ```yaml
+          some.controller.annotation/snippet: |
+            set $agentflag 0;
+            if ($http_user_agent ~* "(Android|iPhone|Windows Phone|UC|Kindle)" ) {
+              set $agentflag 1;
+            }
+            if ( $agentflag = 1 ) {
+              return 301 http://m.company.org;
+            }
+          ```
 
 ---
 
