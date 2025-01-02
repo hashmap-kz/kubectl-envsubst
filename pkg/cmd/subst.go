@@ -62,14 +62,16 @@ func (p *Envsubst) SubstituteEnvs(text string) (string, error) {
 	})
 
 	// Handle strict mode by detecting unresolved variables
+	// Returns error, if and only if an unresolved variable is from one of the filter-list.
+	// Ignoring other unexpanded variables, that may be a parts of config-maps, etc...
+	//
 	if p.strict {
 		unresolved := envVarRegex.FindAllString(substituted, -1)
 
-		sort.Strings(unresolved)
-		if len(unresolved) > 0 {
+		filterUnresolved := p.filterUnresolvedByAllowedFilters(unresolved)
+		if len(filterUnresolved) > 0 {
 			sb := strings.Builder{}
-			for _, k := range unresolved {
-				k := strings.Trim(k, "${}")
+			for _, k := range filterUnresolved {
 				if !strings.Contains(sb.String(), k) {
 					sb.WriteString(k + ", ")
 				}
@@ -77,7 +79,48 @@ func (p *Envsubst) SubstituteEnvs(text string) (string, error) {
 			resultList := strings.TrimSpace(sb.String())
 			return "", fmt.Errorf("undefined variables: [%s]", strings.TrimSuffix(resultList, ","))
 		}
+
+		// TODO: verbose mode here: if there are unexpanded placeholders, it's not an error, just warn/info
 	}
 
 	return substituted, nil
+}
+
+func (p *Envsubst) filterUnresolvedByAllowedFilters(input []string) []string {
+	result := []string{}
+	for _, v := range input {
+		v := strings.Trim(v, "${}")
+		if !p.isInFilter(v) {
+			continue
+		}
+		if varInSlice(v, result) {
+			continue
+		}
+		result = append(result, v)
+	}
+	sort.Strings(result)
+	return result
+}
+
+func (p *Envsubst) isInFilter(e string) bool {
+	for _, allowed := range p.allowedVars {
+		if e == allowed {
+			return true
+		}
+	}
+	for _, prefix := range p.allowedPrefixes {
+		if strings.HasPrefix(e, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func varInSlice(target string, slice []string) bool {
+	for _, s := range slice {
+		if s == target {
+			return true
+		}
+	}
+	return false
 }

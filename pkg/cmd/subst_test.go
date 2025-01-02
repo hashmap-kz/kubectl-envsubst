@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -37,7 +38,7 @@ func TestEnvsubst(t *testing.T) {
 		{
 			name:        "Strict mode with undefined variable",
 			input:       "Hello $USER",
-			allowedVars: []string{},
+			allowedVars: []string{"USER"},
 			strict:      true,
 			env:         map[string]string{},
 			want:        "",
@@ -78,6 +79,117 @@ func TestEnvsubst(t *testing.T) {
 			strict:      false,
 			env:         map[string]string{"USER": "Charlie"},
 			want:        "Hello Charlie, welcome to $APP_ENV",
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set environment variables
+			for k, v := range tt.env {
+				os.Setenv(k, v)
+			}
+			// Cleanup environment variables
+			defer func() {
+				for k := range tt.env {
+					os.Unsetenv(k)
+				}
+			}()
+
+			// Create Envsubst instance
+			envsubst := NewEnvsubst(tt.allowedVars, tt.allowedPrefixes, tt.strict)
+			result, err := envsubst.SubstituteEnvs(tt.input)
+
+			if (err != nil) != tt.expectError {
+				t.Errorf("unexpected error status: got %v, want %v", err != nil, tt.expectError)
+			}
+
+			if result != tt.want {
+				t.Errorf("unexpected result: got %q, want %q", result, tt.want)
+			}
+		})
+	}
+}
+
+func TestEnvsubstWithManifestsParts(t *testing.T) {
+	var manifestSnippetInput = strings.TrimSpace(`
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/server-snippet: |
+      set $agentflag 0;
+      if ($http_user_agent ~* "(Android|iPhone|Windows Phone|UC|Kindle)" ) {
+        set $agentflag 1;
+      }
+      if ( $agentflag = 1 ) {
+        return 301 http://m.${INFRA_DOMAIN_NAME};
+      }
+  name: $CI_PROJECT_NAME
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: app.${INFRA_DOMAIN_NAME}
+      http:
+        paths:
+          - backend:
+              service:
+                name: $CI_PROJECT_NAME
+                port:
+                  number: 80
+            path: /
+            pathType: ImplementationSpecific
+`)
+
+	var manifestSnippetExpect = strings.TrimSpace(`
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/server-snippet: |
+      set $agentflag 0;
+      if ($http_user_agent ~* "(Android|iPhone|Windows Phone|UC|Kindle)" ) {
+        set $agentflag 1;
+      }
+      if ( $agentflag = 1 ) {
+        return 301 http://m.company.org;
+      }
+  name: api-gw
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: app.company.org
+      http:
+        paths:
+          - backend:
+              service:
+                name: api-gw
+                port:
+                  number: 80
+            path: /
+            pathType: ImplementationSpecific
+`)
+
+	tests := []struct {
+		name            string
+		input           string
+		allowedVars     []string
+		allowedPrefixes []string
+		strict          bool
+		env             map[string]string
+		want            string
+		expectError     bool
+	}{
+		{
+			name:        "Mixed subst",
+			input:       manifestSnippetInput,
+			allowedVars: []string{"INFRA_DOMAIN_NAME", "CI_PROJECT_NAME"},
+			strict:      true,
+			env: map[string]string{
+				"INFRA_DOMAIN_NAME": "company.org",
+				"CI_PROJECT_NAME":   "api-gw",
+			},
+			want:        manifestSnippetExpect,
 			expectError: false,
 		},
 	}
@@ -168,15 +280,7 @@ func TestStrictMode(t *testing.T) {
 		{
 			name:        "Strict mode with unresolved variable",
 			input:       "Hello $UNKNOWN",
-			allowedVars: []string{"USER"},
-			strict:      true,
-			expected:    "",
-			expectError: true,
-		},
-		{
-			name:        "Strict mode with partially resolved variables",
-			input:       "Hello $USER and $UNKNOWN",
-			allowedVars: []string{"USER"},
+			allowedVars: []string{"UNKNOWN"},
 			strict:      true,
 			expected:    "",
 			expectError: true,
@@ -606,7 +710,7 @@ spec:
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			envsubst := NewEnvsubst(test.allowedEnvs, []string{}, false)
+			envsubst := NewEnvsubst(test.allowedEnvs, []string{}, true)
 			output, err := envsubst.SubstituteEnvs(test.text)
 
 			if err != nil {
