@@ -20,6 +20,7 @@ type CmdFlagsProxy struct {
 	Recursive             bool
 	Help                  bool
 	Others                []string
+	HasStdin              bool
 }
 
 func ParseCmdFlags() (*CmdFlagsProxy, error) {
@@ -36,6 +37,7 @@ func ParseCmdFlags() (*CmdFlagsProxy, error) {
 		Recursive:             recognized.Recursive,
 		Help:                  recognized.Help,
 		Others:                recognized.Others,
+		HasStdin:              recognized.HasStdin,
 	}
 
 	for _, f := range recognized.Filenames {
@@ -77,12 +79,8 @@ func resolveFilenames(path string, recursive bool) ([]string, error) {
 	var results []string
 
 	// Check if the path is a URL
-	isURL := func(s string) bool {
-		u, err := url.Parse(s)
-		return err == nil && u.Scheme != "" && u.Host != ""
-	}
 
-	if isURL(path) {
+	if IsURL(path) {
 		// Add URL directly to results
 		results = append(results, path)
 	} else if strings.Contains(path, "*") {
@@ -128,4 +126,9 @@ func resolveFilenames(path string, recursive bool) ([]string, error) {
 	// Ensure consistent order
 	sort.Strings(results)
 	return results, nil
+}
+
+func IsURL(s string) bool {
+	u, err := url.Parse(s)
+	return err == nil && u.Scheme != "" && u.Host != ""
 }

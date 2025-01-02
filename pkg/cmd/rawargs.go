@@ -18,6 +18,7 @@ type CmdArgsRawRecognized struct {
 	Recursive             bool
 	Help                  bool
 	Others                []string
+	HasStdin              bool
 }
 
 func allEmpty(where []string) bool {
@@ -46,7 +47,13 @@ func parseArgs() (CmdArgsRawRecognized, error) {
 			if filenameGiven == "" {
 				return result, fmt.Errorf("missing value for flag %s", arg)
 			}
-			result.Filenames = append(result.Filenames, filenameGiven)
+			err := handleStdin(filenameGiven, &result)
+			if err != nil {
+				return result, err
+			}
+			if filenameGiven != "-" {
+				result.Filenames = append(result.Filenames, filenameGiven)
+			}
 
 			// -f=pod.yaml
 		case strings.HasPrefix(arg, "-f="):
@@ -54,8 +61,13 @@ func parseArgs() (CmdArgsRawRecognized, error) {
 			if filenameGiven == "" {
 				return result, fmt.Errorf("missing value for flag %s", arg)
 			}
-			result.Filenames = append(result.Filenames, filenameGiven)
-
+			err := handleStdin(filenameGiven, &result)
+			if err != nil {
+				return result, err
+			}
+			if filenameGiven != "-" {
+				result.Filenames = append(result.Filenames, filenameGiven)
+			}
 			// --filename pod.yaml -f pod.yaml
 		case arg == "--filename" || arg == "-f":
 			if i+1 < len(args) {
@@ -63,7 +75,13 @@ func parseArgs() (CmdArgsRawRecognized, error) {
 				if filenameGiven == "" {
 					return result, fmt.Errorf("missing value for flag %s", arg)
 				}
-				result.Filenames = append(result.Filenames, filenameGiven)
+				err := handleStdin(filenameGiven, &result)
+				if err != nil {
+					return result, err
+				}
+				if filenameGiven != "-" {
+					result.Filenames = append(result.Filenames, filenameGiven)
+				}
 				i++ // Skip the next argument since it's the value
 			} else {
 				return result, fmt.Errorf("missing value for flag %s", arg)
@@ -147,4 +165,14 @@ func parseArgs() (CmdArgsRawRecognized, error) {
 	}
 
 	return result, nil
+}
+
+func handleStdin(filenameGiven string, result *CmdArgsRawRecognized) error {
+	if filenameGiven == "-" {
+		if result.HasStdin {
+			return fmt.Errorf("multiple redirection to stdin detected")
+		}
+		result.HasStdin = true
+	}
+	return nil
 }
