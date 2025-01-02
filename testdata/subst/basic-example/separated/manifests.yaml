@@ -1,0 +1,94 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: &app $CI_PROJECT_NAME
+  labels:
+    app: *app
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+  selector:
+    app: *app
+
+# NOTE: for real application you use something like this:
+#
+#---
+#apiVersion: external-secrets.io/v1beta1
+#kind: ExternalSecret
+#metadata:
+#  name: &app ${CI_PROJECT_NAME}
+#spec:
+#  refreshInterval: "15s"
+#  secretStoreRef:
+#    name: cluster-secret-store
+#    kind: ClusterSecretStore
+#  target:
+#    name: *app
+#    template:
+#      type: Opaque
+#      engineVersion: v2
+#  dataFrom:
+#    - extract:
+#        key: secret/${CI_PROJECT_PATH}/${CI_COMMIT_REF_NAME}
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: &app ${CI_PROJECT_NAME}
+  labels:
+    app: *app
+type: Opaque
+stringData:
+  vault_path: "secret/${CI_PROJECT_PATH}/${CI_COMMIT_REF_NAME}"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: &app ${CI_PROJECT_NAME}
+  labels:
+    app: *app
+  annotations:
+    # In some cases, a manifest may include placeholders that are not meant to be expanded.
+    some.controller.annotation/snippet: |
+      set $agentflag 0;
+      if ($http_user_agent ~* "(Android|iPhone|Windows Phone|UC|Kindle)" ) {
+        set $agentflag 1;
+      }
+      if ( $agentflag = 1 ) {
+        return 301 http://m.company.org;
+      }
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: *app
+  template:
+    metadata:
+      labels:
+        app: *app
+    spec:
+      containers:
+        - name: *app
+          # NOTE: for real application you use something like this:
+          # image: ${CI_REGISTRY}/${CI_PROJECT_PATH}/${CI_COMMIT_REF_NAME}/app:latest
+          image: ${APP_IMAGE}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - secretRef:
+                name: *app
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "128m"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
