@@ -49,11 +49,16 @@ func (p *Envsubst) SubstituteEnvs(text string) (string, error) {
 	})
 
 	// Handle unresolved variables in strict mode
+	// Returns error, if and only if an unresolved variable is from one of the filter-list.
+	// Ignoring other unexpanded variables, that may be a parts of config-maps, etc...
+	//
 	if err := p.checkUnresolvedStrictMode(substituted); err != nil {
 		return "", err
 	}
 
 	// Log unresolved variables in verbose mode
+	// if there are unexpanded placeholders, it's not an error, just debug-info
+	// it's not an error, because these placeholders are not in filter lists, so they remain unchanged
 	unresolved := envVarRegex.FindAllString(substituted, -1)
 	p.logUnresolvedVariables(unresolved)
 
