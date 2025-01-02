@@ -196,3 +196,79 @@ func TestParseArgs(t *testing.T) {
 		})
 	}
 }
+
+func TestParseArgs_EnvFallback(t *testing.T) {
+	os.Setenv("ENVSUBST_ALLOWED_VARS", "HOME,USER")
+	os.Setenv("ENVSUBST_ALLOWED_PREFIXES", "APP_,CI_")
+	defer os.Unsetenv("ENVSUBST_ALLOWED_VARS")
+	defer os.Unsetenv("ENVSUBST_ALLOWED_PREFIXES")
+
+	os.Args = []string{"cmd"}
+	result, err := parseArgs()
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	expectedVars := []string{"HOME", "USER"}
+	expectedPrefixes := []string{"APP_", "CI_"}
+	if len(result.EnvsubstAllowedVars) != len(expectedVars) {
+		t.Errorf("Expected allowed vars %v, got %v", expectedVars, result.EnvsubstAllowedVars)
+	}
+	for i, varName := range expectedVars {
+		if result.EnvsubstAllowedVars[i] != varName {
+			t.Errorf("Expected allowed var %s, got %s", varName, result.EnvsubstAllowedVars[i])
+		}
+	}
+	if len(result.EnvsubstAllowedPrefix) != len(expectedPrefixes) {
+		t.Errorf("Expected allowed prefixes %v, got %v", expectedPrefixes, result.EnvsubstAllowedPrefix)
+	}
+	for i, prefix := range expectedPrefixes {
+		if result.EnvsubstAllowedPrefix[i] != prefix {
+			t.Errorf("Expected allowed prefix %s, got %s", prefix, result.EnvsubstAllowedPrefix[i])
+		}
+	}
+}
+
+func TestParseArgs_CmdAndEnvFlags(t *testing.T) {
+	// Set environment variables
+	os.Setenv("ENVSUBST_ALLOWED_VARS", "HOME,USER")
+	os.Setenv("ENVSUBST_ALLOWED_PREFIXES", "APP_,CI_")
+	defer os.Unsetenv("ENVSUBST_ALLOWED_VARS")
+	defer os.Unsetenv("ENVSUBST_ALLOWED_PREFIXES")
+
+	// Set command-line arguments
+	os.Args = []string{
+		"cmd",
+		"--envsubst-allowed-vars=CMD_VAR1,CMD_VAR2",
+		"--envsubst-allowed-prefixes=CMD_",
+	}
+
+	result, err := parseArgs()
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	// Verify that command-line flags take precedence over environment variables
+	expectedVars := []string{"CMD_VAR1", "CMD_VAR2"}
+	expectedPrefixes := []string{"CMD_"}
+
+	if len(result.EnvsubstAllowedVars) != len(expectedVars) {
+		t.Errorf("Expected allowed vars %v, got %v", expectedVars, result.EnvsubstAllowedVars)
+	}
+	for i, varName := range expectedVars {
+		if result.EnvsubstAllowedVars[i] != varName {
+			t.Errorf("Expected allowed var %s, got %s", varName, result.EnvsubstAllowedVars[i])
+		}
+	}
+
+	if len(result.EnvsubstAllowedPrefix) != len(expectedPrefixes) {
+		t.Errorf("Expected allowed prefixes %v, got %v", expectedPrefixes, result.EnvsubstAllowedPrefix)
+	}
+	for i, prefix := range expectedPrefixes {
+		if result.EnvsubstAllowedPrefix[i] != prefix {
+			t.Errorf("Expected allowed prefix %s, got %s", prefix, result.EnvsubstAllowedPrefix[i])
+		}
+	}
+}
