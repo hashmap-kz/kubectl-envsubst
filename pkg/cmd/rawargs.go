@@ -6,6 +6,11 @@ import (
 	"strings"
 )
 
+const (
+	envsubstAllowedVarsEnv     = "ENVSUBST_ALLOWED_VARS"
+	envsubstAllowedPrefixesEnv = "ENVSUBST_ALLOWED_PREFIXES"
+)
+
 type CmdArgsRawRecognized struct {
 	Filenames             []string
 	EnvsubstAllowedVars   []string
@@ -116,6 +121,28 @@ func parseArgs() (CmdArgsRawRecognized, error) {
 
 		default:
 			result.Others = append(result.Others, arg)
+		}
+	}
+
+	// trying to get allowed-vars config from envs
+	if len(result.EnvsubstAllowedVars) == 0 {
+		if value, exists := os.LookupEnv(envsubstAllowedVarsEnv); exists {
+			split := strings.Split(value, ",")
+			if allEmpty(split) {
+				return result, fmt.Errorf("missing value for env: %s", envsubstAllowedVarsEnv)
+			}
+			result.EnvsubstAllowedVars = split
+		}
+	}
+
+	// trying to get allowed-prefixes from envs
+	if len(result.EnvsubstAllowedPrefix) == 0 {
+		if value, exists := os.LookupEnv(envsubstAllowedPrefixesEnv); exists {
+			split := strings.Split(value, ",")
+			if allEmpty(split) {
+				return result, fmt.Errorf("missing value for env: %s", envsubstAllowedPrefixesEnv)
+			}
+			result.EnvsubstAllowedPrefix = split
 		}
 	}
 

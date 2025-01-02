@@ -87,16 +87,58 @@ kubectl envsubst apply -f manifests/ \
 
 ## **Flags**:
 
-```
---envsubst-allowed-vars=HOME,USER,PKEY_PATH,DB_PASS,IMAGE_NAME,IMAGE_TAG
-    Accepts a comma-separated list of variable names allowed for substitution. 
-    Variables not included in this list will not be substituted.
+### **1. Using Command-Line Flags**
 
---envsubst-allowed-prefixes=APP_,CI_ 
-    Accepts a comma-separated list of prefixes. 
-    Only variables with names starting with one of these prefixes will be substituted; others will be ignored.
-    
-```
+#### `--envsubst-allowed-vars`
+
+- **Description**: Specifies a comma-separated list of variable names that are explicitly allowed for substitution.
+- **Usage**:
+  ```bash
+  --envsubst-allowed-vars=HOME,USER,PKEY_PATH,DB_PASS,IMAGE_NAME,IMAGE_TAG
+  ```
+- **Behavior**:
+    - Variables not included in this list will not be substituted.
+    - Useful for ensuring only specific variables are processed, preventing accidental substitutions.
+
+#### `--envsubst-allowed-prefixes`
+
+- **Description**: Specifies a comma-separated list of prefixes to filter variables by name.
+- **Usage**:
+  ```bash
+  --envsubst-allowed-prefixes=APP_,CI_
+  ```
+- **Behavior**:
+    - Only variables with names starting with one of the specified prefixes will be substituted.
+    - Variables without matching prefixes will be ignored.
+
+---
+
+### **2. Using Environment Variables**
+
+#### `ENVSUBST_ALLOWED_VARS`
+
+- **Description**: Alternative way to define a list of allowed variables for substitution.
+- **Usage**:
+  ```bash
+  export ENVSUBST_ALLOWED_VARS='HOST,USER,PKEY_PATH'
+  ```
+
+#### `ENVSUBST_ALLOWED_PREFIXES`
+
+- **Description**: Alternative way to define a list of allowed prefixes for variable substitution.
+- **Usage**:
+  ```bash
+  export ENVSUBST_ALLOWED_PREFIXES='CI_,APP_'
+  ```
+
+---
+
+### **NOTE: CLI Takes Precedence Over Environment Variables**
+
+- **Priority**: If both CLI flags and environment variables are set:
+    - **CLI flags** (`--envsubst-allowed-vars`, `--envsubst-allowed-prefixes`) will **override** their respective
+      environment variable values.
+    - This ensures explicit command-line options have the highest priority.
 
 ---
 

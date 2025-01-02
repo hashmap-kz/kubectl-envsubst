@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -194,5 +195,104 @@ func TestParseArgs(t *testing.T) {
 				t.Errorf("expected result: %+v, got: %+v", tc.expectedResult, result)
 			}
 		})
+	}
+}
+
+func TestParseArgs_EnvFallback(t *testing.T) {
+	os.Setenv("ENVSUBST_ALLOWED_VARS", "HOME,USER")
+	os.Setenv("ENVSUBST_ALLOWED_PREFIXES", "APP_,CI_")
+	defer os.Unsetenv("ENVSUBST_ALLOWED_VARS")
+	defer os.Unsetenv("ENVSUBST_ALLOWED_PREFIXES")
+
+	os.Args = []string{"cmd"}
+	result, err := parseArgs()
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	expectedVars := []string{"HOME", "USER"}
+	expectedPrefixes := []string{"APP_", "CI_"}
+	if len(result.EnvsubstAllowedVars) != len(expectedVars) {
+		t.Errorf("Expected allowed vars %v, got %v", expectedVars, result.EnvsubstAllowedVars)
+	}
+	for i, varName := range expectedVars {
+		if result.EnvsubstAllowedVars[i] != varName {
+			t.Errorf("Expected allowed var %s, got %s", varName, result.EnvsubstAllowedVars[i])
+		}
+	}
+	if len(result.EnvsubstAllowedPrefix) != len(expectedPrefixes) {
+		t.Errorf("Expected allowed prefixes %v, got %v", expectedPrefixes, result.EnvsubstAllowedPrefix)
+	}
+	for i, prefix := range expectedPrefixes {
+		if result.EnvsubstAllowedPrefix[i] != prefix {
+			t.Errorf("Expected allowed prefix %s, got %s", prefix, result.EnvsubstAllowedPrefix[i])
+		}
+	}
+}
+
+func TestParseArgs_CmdAndEnvFlags(t *testing.T) {
+	// Set environment variables
+	os.Setenv("ENVSUBST_ALLOWED_VARS", "HOME,USER")
+	os.Setenv("ENVSUBST_ALLOWED_PREFIXES", "APP_,CI_")
+	defer os.Unsetenv("ENVSUBST_ALLOWED_VARS")
+	defer os.Unsetenv("ENVSUBST_ALLOWED_PREFIXES")
+
+	// Set command-line arguments
+	os.Args = []string{
+		"cmd",
+		"--envsubst-allowed-vars=CMD_VAR1,CMD_VAR2",
+		"--envsubst-allowed-prefixes=CMD_",
+	}
+
+	result, err := parseArgs()
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	// Verify that command-line flags take precedence over environment variables
+	expectedVars := []string{"CMD_VAR1", "CMD_VAR2"}
+	expectedPrefixes := []string{"CMD_"}
+
+	if len(result.EnvsubstAllowedVars) != len(expectedVars) {
+		t.Errorf("Expected allowed vars %v, got %v", expectedVars, result.EnvsubstAllowedVars)
+	}
+	for i, varName := range expectedVars {
+		if result.EnvsubstAllowedVars[i] != varName {
+			t.Errorf("Expected allowed var %s, got %s", varName, result.EnvsubstAllowedVars[i])
+		}
+	}
+
+	if len(result.EnvsubstAllowedPrefix) != len(expectedPrefixes) {
+		t.Errorf("Expected allowed prefixes %v, got %v", expectedPrefixes, result.EnvsubstAllowedPrefix)
+	}
+	for i, prefix := range expectedPrefixes {
+		if result.EnvsubstAllowedPrefix[i] != prefix {
+			t.Errorf("Expected allowed prefix %s, got %s", prefix, result.EnvsubstAllowedPrefix[i])
+		}
+	}
+}
+
+func TestParseArgs_EmptyEnvVars(t *testing.T) {
+	// Set empty environment variables
+	os.Setenv("ENVSUBST_ALLOWED_VARS", "")
+	os.Setenv("ENVSUBST_ALLOWED_PREFIXES", "")
+	defer os.Unsetenv("ENVSUBST_ALLOWED_VARS")
+	defer os.Unsetenv("ENVSUBST_ALLOWED_PREFIXES")
+
+	os.Args = []string{"cmd"}
+	_, err := parseArgs()
+
+	// Expect an error due to empty environment variables
+	if err == nil {
+		t.Fatal("Expected an error for empty environment variables, but got none")
+	}
+
+	expectedErrorVars := "missing value for env: ENVSUBST_ALLOWED_VARS"
+	expectedErrorPrefixes := "missing value for env: ENVSUBST_ALLOWED_PREFIXES"
+
+	if !strings.Contains(err.Error(), expectedErrorVars) && !strings.Contains(err.Error(), expectedErrorPrefixes) {
+		t.Errorf("Expected error to mention missing values for ENVSUBST_ALLOWED_VARS or ENVSUBST_ALLOWED_PREFIXES, got '%s'", err.Error())
 	}
 }
