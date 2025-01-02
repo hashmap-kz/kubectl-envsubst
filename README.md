@@ -96,9 +96,6 @@ kubectl envsubst apply -f manifests/ \
     Accepts a comma-separated list of prefixes. 
     Only variables with names starting with one of these prefixes will be substituted; others will be ignored.
     
---envsubst-no-strict
-    Disables strict-mode.
-    Strict mode is enabled by default, as it is the preferred setting in the majority of use cases (99% of the time).
 ```
 
 ---
@@ -108,10 +105,7 @@ kubectl envsubst apply -f manifests/ \
 Substitution of environment variables without verifying their inclusion in a filter list is intentionally
 avoided, as this behavior can lead to subtle errors.
 
-If a variable is not found in the filter list and strict mode is disabled,
-no error will be returned, and the variable will remain unreplaced in the source text.
-Conversely, if strict mode is enabled (**it's enabled by default**) and the variable is not in the filter list, an error
-will be returned.
+If a variable is not found in the filter list, an error will be returned.
 
 Expanding manifests with all available environment variables can work fine
 for simple cases, such as when your manifest contains only a service and a deployment

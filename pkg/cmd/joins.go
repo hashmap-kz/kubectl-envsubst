@@ -17,7 +17,8 @@ func JoinFiles(flags *CmdFlagsProxy) ([]byte, error) {
 		}
 
 		// substitute environment variables
-		envSubst := NewEnvsubst(flags.EnvsubstAllowedVars, flags.EnvsubstAllowedPrefix, flags.Strict)
+		// strict mode is always ON
+		envSubst := NewEnvsubst(flags.EnvsubstAllowedVars, flags.EnvsubstAllowedPrefix, true)
 		substituted, err := envSubst.SubstituteEnvs(string(file))
 		if err != nil {
 			return nil, err
