@@ -10,7 +10,6 @@ type CmdArgsRawRecognized struct {
 	Filenames             []string
 	EnvsubstAllowedVars   []string
 	EnvsubstAllowedPrefix []string
-	Strict                bool
 	Recursive             bool
 	Help                  bool
 	Others                []string
@@ -31,10 +30,6 @@ func allEmpty(where []string) bool {
 func parseArgs() (CmdArgsRawRecognized, error) {
 	args := os.Args[1:] // Skip the program name
 	var result CmdArgsRawRecognized
-
-	// by default working in strict mode
-	// may be turned off with --envsubst-no-strict flag
-	result.Strict = true
 
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
@@ -110,10 +105,6 @@ func parseArgs() (CmdArgsRawRecognized, error) {
 			} else {
 				return result, fmt.Errorf("missing value for flag %s", arg)
 			}
-
-		// --envsubst-no-strict
-		case arg == "--envsubst-no-strict":
-			result.Strict = false
 
 		// --recursive, -R
 		case arg == "--recursive" || arg == "-R":
