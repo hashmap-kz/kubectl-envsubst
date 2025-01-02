@@ -290,11 +290,7 @@ an allow-list or prefix-list.
 
 ## **Contributing**
 
-We welcome contributions! To contribute:
-
-1. Fork the repository.
-2. Create a new branch for your feature or bug fix.
-3. Submit a pull request describing your changes.
+We welcome contributions! To contribute: see the [Contribution](CONTRIBUTING.md) guidelines.
 
 ---
 

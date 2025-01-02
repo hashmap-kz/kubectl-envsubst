@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"log"
 	"os"
 	"strings"
 	"testing"
@@ -721,5 +722,340 @@ spec:
 				t.Errorf("Test %q failed: expected %q, got %q", test.name, test.expected, output)
 			}
 		})
+	}
+}
+
+func TestSubstituteEnvs_StrictMode_ErrorForFilteredUnresolved(t *testing.T) {
+	os.Setenv("VAR1", "value1")
+	defer os.Unsetenv("VAR1")
+
+	envsubst := NewEnvsubst([]string{"VAR1", "VAR2"}, []string{}, true)
+
+	text := "Hello $VAR1 and ${VAR2} and ${VAR3}!"
+	_, err := envsubst.SubstituteEnvs(text)
+
+	if err == nil {
+		t.Fatal("Expected an error for unresolved variables in filter, but got none")
+	}
+
+	expectedError := "undefined variables: [VAR2]"
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("Expected error containing '%s', got '%s'", expectedError, err.Error())
+	}
+}
+
+func TestSubstituteEnvs_VerboseMode_DebugUnresolvedVars(t *testing.T) {
+	os.Setenv("VAR1", "value1")
+	defer os.Unsetenv("VAR1")
+
+	envsubst := NewEnvsubst([]string{"VAR1"}, []string{}, true)
+	envsubst.SetVerbose(true)
+
+	logBuffer := strings.Builder{}
+	log.SetOutput(&logBuffer)
+
+	text := "Hello $VAR1 and ${VAR2}!"
+	_, _ = envsubst.SubstituteEnvs(text)
+
+	logBuf := logBuffer.String()
+	if !strings.Contains(logBuf, "DEBUG: an unresolved variable that is not in the filter list remains unchanged: VAR2") {
+		t.Error("Expected debug log for unresolved variable not in filter list")
+	}
+}
+
+func TestSubstituteEnvs_UnresolvedVarsNotInFilter_NoError(t *testing.T) {
+	os.Setenv("VAR1", "value1")
+	defer os.Unsetenv("VAR1")
+
+	envsubst := NewEnvsubst([]string{"VAR1"}, []string{}, true)
+
+	text := "Hello $VAR1 and ${VAR3}!"
+	result, err := envsubst.SubstituteEnvs(text)
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	expected := "Hello value1 and ${VAR3}!"
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
+	}
+}
+
+func TestSubstituteEnvs_FilteredPrefixes_UnresolvedError(t *testing.T) {
+	os.Setenv("APP_VAR1", "value1")
+	defer os.Unsetenv("APP_VAR1")
+
+	envsubst := NewEnvsubst([]string{}, []string{"APP_"}, true)
+
+	text := "Hello $APP_VAR1 and ${APP_VAR2}!"
+	_, err := envsubst.SubstituteEnvs(text)
+
+	if err == nil {
+		t.Fatal("Expected an error for unresolved variable with allowed prefix, but got none")
+	}
+
+	expectedError := "undefined variables: [APP_VAR2]"
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Errorf("Expected error containing '%s', got '%s'", expectedError, err.Error())
+	}
+}
+
+func TestSubstituteEnvs_AllResolved(t *testing.T) {
+	os.Setenv("VAR1", "value1")
+	os.Setenv("VAR2", "value2")
+	defer os.Unsetenv("VAR1")
+	defer os.Unsetenv("VAR2")
+
+	envsubst := NewEnvsubst([]string{"VAR1", "VAR2"}, []string{}, true)
+
+	text := "Hello $VAR1 and ${VAR2}!"
+	expected := "Hello value1 and value2!"
+	result, err := envsubst.SubstituteEnvs(text)
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
+	}
+}
+
+func TestSubstituteEnvs_NoFilter_NoErrorForUnresolved(t *testing.T) {
+	os.Setenv("VAR1", "value1")
+	defer os.Unsetenv("VAR1")
+
+	envsubst := NewEnvsubst([]string{}, []string{}, false)
+
+	text := "Hello $VAR1 and ${VAR3}!"
+	expected := "Hello $VAR1 and ${VAR3}!"
+	result, err := envsubst.SubstituteEnvs(text)
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
+	}
+}
+
+func TestSubstituteEnvs_EmptyInput(t *testing.T) {
+	envsubst := NewEnvsubst([]string{}, []string{}, true)
+
+	text := ""
+	expected := ""
+	result, err := envsubst.SubstituteEnvs(text)
+
+	if err != nil {
+		t.Fatalf("Unexpected error for empty input: %v", err)
+	}
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
+	}
+}
+
+func TestSubstituteEnvs_EmptyAllowedLists(t *testing.T) {
+	os.Setenv("VAR1", "value1")
+	defer os.Unsetenv("VAR1")
+
+	envsubst := NewEnvsubst([]string{}, []string{}, true)
+
+	text := "Hello $VAR1!"
+	expected := "Hello $VAR1!"
+	result, err := envsubst.SubstituteEnvs(text)
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
+	}
+}
+
+func TestSubstituteEnvs_NoEnvVarsSet(t *testing.T) {
+	envsubst := NewEnvsubst([]string{"VAR1"}, []string{}, true)
+
+	text := "Hello $VAR1!"
+	_, err := envsubst.SubstituteEnvs(text)
+
+	if err == nil {
+		t.Fatal("Expected an error for unresolved variables, but got none")
+	}
+}
+
+func TestSubstituteEnvs_OverlappingPrefixes(t *testing.T) {
+	os.Setenv("APP_VAR1", "value1")
+	os.Setenv("APP_VAR2", "value2")
+	defer os.Unsetenv("APP_VAR1")
+	defer os.Unsetenv("APP_VAR2")
+
+	envsubst := NewEnvsubst([]string{}, []string{"APP_", "APP_VAR"}, true)
+
+	text := "Hello $APP_VAR1 and ${APP_VAR2}!"
+	expected := "Hello value1 and value2!"
+	result, err := envsubst.SubstituteEnvs(text)
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
+	}
+}
+
+func TestSubstituteEnvs_StrictMode_MixedFilters(t *testing.T) {
+	os.Setenv("VAR1", "value1")
+	os.Setenv("APP_VAR2", "value2")
+	defer os.Unsetenv("VAR1")
+	defer os.Unsetenv("APP_VAR2")
+
+	envsubst := NewEnvsubst([]string{"VAR1"}, []string{"APP_"}, true)
+
+	text := "Hello $VAR1 and ${APP_VAR2} and ${VAR3}!"
+	result, err := envsubst.SubstituteEnvs(text)
+
+	// Should not raise an error since unresolved ${VAR3} is not in filters
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	expected := "Hello value1 and value2 and ${VAR3}!"
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
+	}
+}
+
+func TestSubstituteEnvs_MalformedPlaceholders(t *testing.T) {
+	envsubst := NewEnvsubst([]string{"VAR1"}, []string{"APP_"}, true)
+
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		// Malformed placeholders that should remain unchanged
+		{"Hello $!", "Hello $!"},
+		{"Hello ${}", "Hello ${}"},
+		{"Hello $123", "Hello $123"},
+		{"Hello ${123VAR}", "Hello ${123VAR}"},
+		{"Hello $VAR!", "Hello $VAR!"},
+		// Correct placeholders that should be substituted
+		{"Hello $VAR1!", "Hello value1!"},
+	}
+
+	// Set environment variable
+	os.Setenv("VAR1", "value1")
+	defer os.Unsetenv("VAR1")
+
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			result, err := envsubst.SubstituteEnvs(test.input)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+			if result != test.expected {
+				t.Errorf("Expected '%s', got '%s'", test.expected, result)
+			}
+		})
+	}
+}
+
+// tests for helper functions
+
+// Test for preprocessEnv
+func TestPreprocessEnv(t *testing.T) {
+	os.Setenv("TEST_VAR1", "value1")
+	os.Setenv("TEST_VAR2", "value2")
+	defer os.Unsetenv("TEST_VAR1")
+	defer os.Unsetenv("TEST_VAR2")
+
+	envMap := preprocessEnv()
+
+	if envMap["TEST_VAR1"] != "value1" {
+		t.Errorf("Expected TEST_VAR1=value1, got %v", envMap["TEST_VAR1"])
+	}
+	if envMap["TEST_VAR2"] != "value2" {
+		t.Errorf("Expected TEST_VAR2=value2, got %v", envMap["TEST_VAR2"])
+	}
+}
+
+// Test for collectAllowedEnvVars
+func TestCollectAllowedEnvVars(t *testing.T) {
+	os.Setenv("ALLOWED_VAR1", "value1")
+	os.Setenv("PREFIX_VAR1", "value2")
+	defer os.Unsetenv("ALLOWED_VAR1")
+	defer os.Unsetenv("PREFIX_VAR1")
+
+	envsubst := NewEnvsubst([]string{"ALLOWED_VAR1"}, []string{"PREFIX_"}, false)
+	envMap := envsubst.collectAllowedEnvVars()
+
+	if envMap["ALLOWED_VAR1"] != "value1" {
+		t.Errorf("Expected ALLOWED_VAR1=value1, got %v", envMap["ALLOWED_VAR1"])
+	}
+	if envMap["PREFIX_VAR1"] != "value2" {
+		t.Errorf("Expected PREFIX_VAR1=value2, got %v", envMap["PREFIX_VAR1"])
+	}
+}
+
+// Test for checkUnresolvedStrictMode
+func TestCheckUnresolvedStrictMode(t *testing.T) {
+	envsubst := NewEnvsubst([]string{"VAR1"}, []string{"PREFIX_"}, true)
+	input := "Hello ${VAR1}!"
+
+	err := envsubst.checkUnresolvedStrictMode(input)
+	if err == nil {
+		t.Fatal("Expected an error for unresolved variables in strict mode, but got none")
+	}
+
+	expected := "undefined variables: [VAR1]"
+	if err.Error() != expected {
+		t.Errorf("Expected error '%s', got '%s'", expected, err.Error())
+	}
+}
+
+// Test for filterUnresolvedByAllowedLists
+func TestFilterUnresolvedByAllowedLists(t *testing.T) {
+	envsubst := NewEnvsubst([]string{"VAR1"}, []string{"PREFIX_"}, false)
+	input := []string{"${VAR1}", "${VAR2}", "${PREFIX_VAR3}", "${OTHER_VAR}"}
+
+	filtered := envsubst.filterUnresolvedByAllowedLists(input)
+
+	expected := []string{"PREFIX_VAR3", "VAR1"}
+	if len(filtered) != len(expected) {
+		t.Errorf("Expected %v, got %v", expected, filtered)
+	}
+	for i, v := range expected {
+		if filtered[i] != v {
+			t.Errorf("Expected %v, got %v", expected[i], filtered[i])
+		}
+	}
+}
+
+// Test for sortUnresolved
+func TestSortUnresolved(t *testing.T) {
+	envsubst := NewEnvsubst([]string{}, []string{}, false)
+	input := []string{"${VAR3}", "${VAR1}", "${VAR2}", "${VAR1}"}
+
+	sorted := envsubst.sortUnresolved(input)
+
+	expected := []string{"VAR1", "VAR2", "VAR3"}
+	if len(sorted) != len(expected) {
+		t.Errorf("Expected %v, got %v", expected, sorted)
+	}
+	for i, v := range expected {
+		if sorted[i] != v {
+			t.Errorf("Expected %v, got %v", expected[i], sorted[i])
+		}
+	}
+}
+
+// Test for varInSlice
+func TestVarInSlice(t *testing.T) {
+	slice := []string{"VAR1", "VAR2", "VAR3"}
+
+	if !varInSlice("VAR1", slice) {
+		t.Errorf("Expected VAR1 to be in slice")
+	}
+	if varInSlice("VAR4", slice) {
+		t.Errorf("Did not expect VAR4 to be in slice")
 	}
 }
