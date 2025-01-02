@@ -958,3 +958,104 @@ func TestSubstituteEnvs_MalformedPlaceholders(t *testing.T) {
 		})
 	}
 }
+
+// tests for helper functions
+
+// Test for preprocessEnv
+func TestPreprocessEnv(t *testing.T) {
+	os.Setenv("TEST_VAR1", "value1")
+	os.Setenv("TEST_VAR2", "value2")
+	defer os.Unsetenv("TEST_VAR1")
+	defer os.Unsetenv("TEST_VAR2")
+
+	envMap := preprocessEnv()
+
+	if envMap["TEST_VAR1"] != "value1" {
+		t.Errorf("Expected TEST_VAR1=value1, got %v", envMap["TEST_VAR1"])
+	}
+	if envMap["TEST_VAR2"] != "value2" {
+		t.Errorf("Expected TEST_VAR2=value2, got %v", envMap["TEST_VAR2"])
+	}
+}
+
+// Test for collectAllowedEnvVars
+func TestCollectAllowedEnvVars(t *testing.T) {
+	os.Setenv("ALLOWED_VAR1", "value1")
+	os.Setenv("PREFIX_VAR1", "value2")
+	defer os.Unsetenv("ALLOWED_VAR1")
+	defer os.Unsetenv("PREFIX_VAR1")
+
+	envsubst := NewEnvsubst([]string{"ALLOWED_VAR1"}, []string{"PREFIX_"}, false)
+	envMap := envsubst.collectAllowedEnvVars()
+
+	if envMap["ALLOWED_VAR1"] != "value1" {
+		t.Errorf("Expected ALLOWED_VAR1=value1, got %v", envMap["ALLOWED_VAR1"])
+	}
+	if envMap["PREFIX_VAR1"] != "value2" {
+		t.Errorf("Expected PREFIX_VAR1=value2, got %v", envMap["PREFIX_VAR1"])
+	}
+}
+
+// Test for checkUnresolvedStrictMode
+func TestCheckUnresolvedStrictMode(t *testing.T) {
+	envsubst := NewEnvsubst([]string{"VAR1"}, []string{"PREFIX_"}, true)
+	input := "Hello ${VAR1}!"
+
+	err := envsubst.checkUnresolvedStrictMode(input)
+	if err == nil {
+		t.Fatal("Expected an error for unresolved variables in strict mode, but got none")
+	}
+
+	expected := "undefined variables: [VAR1]"
+	if err.Error() != expected {
+		t.Errorf("Expected error '%s', got '%s'", expected, err.Error())
+	}
+}
+
+// Test for filterUnresolvedByAllowedLists
+func TestFilterUnresolvedByAllowedLists(t *testing.T) {
+	envsubst := NewEnvsubst([]string{"VAR1"}, []string{"PREFIX_"}, false)
+	input := []string{"${VAR1}", "${VAR2}", "${PREFIX_VAR3}", "${OTHER_VAR}"}
+
+	filtered := envsubst.filterUnresolvedByAllowedLists(input)
+
+	expected := []string{"PREFIX_VAR3", "VAR1"}
+	if len(filtered) != len(expected) {
+		t.Errorf("Expected %v, got %v", expected, filtered)
+	}
+	for i, v := range expected {
+		if filtered[i] != v {
+			t.Errorf("Expected %v, got %v", expected[i], filtered[i])
+		}
+	}
+}
+
+// Test for sortUnresolved
+func TestSortUnresolved(t *testing.T) {
+	envsubst := NewEnvsubst([]string{}, []string{}, false)
+	input := []string{"${VAR3}", "${VAR1}", "${VAR2}", "${VAR1}"}
+
+	sorted := envsubst.sortUnresolved(input)
+
+	expected := []string{"VAR1", "VAR2", "VAR3"}
+	if len(sorted) != len(expected) {
+		t.Errorf("Expected %v, got %v", expected, sorted)
+	}
+	for i, v := range expected {
+		if sorted[i] != v {
+			t.Errorf("Expected %v, got %v", expected[i], sorted[i])
+		}
+	}
+}
+
+// Test for varInSlice
+func TestVarInSlice(t *testing.T) {
+	slice := []string{"VAR1", "VAR2", "VAR3"}
+
+	if !varInSlice("VAR1", slice) {
+		t.Errorf("Expected VAR1 to be in slice")
+	}
+	if varInSlice("VAR4", slice) {
+		t.Errorf("Did not expect VAR4 to be in slice")
+	}
+}
