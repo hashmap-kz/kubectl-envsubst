@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"io"
+	"net/http"
 	"os"
 )
 
@@ -21,12 +22,10 @@ func JoinFiles(flags *CmdFlagsProxy) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		substituted, err := substBuf(flags, stdin)
 		if err != nil {
 			return nil, err
 		}
-
 		buf.WriteString(substituted)
 		if needSeparator {
 			buf.WriteString("\n---\n")
@@ -35,18 +34,32 @@ func JoinFiles(flags *CmdFlagsProxy) ([]byte, error) {
 
 	// process files
 	for _, f := range flags.Filenames {
+		// passed as URL
+		if IsURL(f) {
+			data, err := readRemote(f)
+			if err != nil {
+				return nil, err
+			}
+			substituted, err := substBuf(flags, data)
+			if err != nil {
+				return nil, err
+			}
+			buf.WriteString(substituted)
+			if needSeparator {
+				buf.WriteString("\n---\n")
+			}
+			continue
+		}
 
-		// get file data
+		// plain file
 		file, err := os.ReadFile(f)
 		if err != nil {
 			return nil, err
 		}
-
 		substituted, err := substBuf(flags, file)
 		if err != nil {
 			return nil, err
 		}
-
 		buf.WriteString(substituted)
 		if needSeparator {
 			buf.WriteString("\n---\n")
@@ -54,6 +67,29 @@ func JoinFiles(flags *CmdFlagsProxy) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+func readRemote(url string) ([]byte, error) {
+
+	// Make the HTTP GET request
+	response, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	// Check for HTTP errors
+	if response.StatusCode != http.StatusOK {
+		return nil, err
+	}
+
+	// Read the response body
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
 }
 
 func substBuf(flags *CmdFlagsProxy, data []byte) (string, error) {
