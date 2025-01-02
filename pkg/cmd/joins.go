@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -81,7 +82,7 @@ func readRemote(url string) ([]byte, error) {
 
 	// Check for HTTP errors
 	if response.StatusCode != http.StatusOK {
-		return nil, err
+		return nil, fmt.Errorf("cannot GET file content from: %s", url)
 	}
 
 	// Read the response body
