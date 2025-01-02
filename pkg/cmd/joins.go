@@ -15,6 +15,7 @@ func JoinFiles(flags *CmdFlagsProxy) ([]byte, error) {
 		totalFiles += 1
 	}
 	needSeparator := totalFiles > 1
+	const separator = "\n---\n"
 
 	// process STDIN
 	if flags.HasStdin {
@@ -28,7 +29,7 @@ func JoinFiles(flags *CmdFlagsProxy) ([]byte, error) {
 		}
 		buf.WriteString(substituted)
 		if needSeparator {
-			buf.WriteString("\n---\n")
+			buf.WriteString(separator)
 		}
 	}
 
@@ -46,7 +47,7 @@ func JoinFiles(flags *CmdFlagsProxy) ([]byte, error) {
 			}
 			buf.WriteString(substituted)
 			if needSeparator {
-				buf.WriteString("\n---\n")
+				buf.WriteString(separator)
 			}
 			continue
 		}
@@ -62,7 +63,7 @@ func JoinFiles(flags *CmdFlagsProxy) ([]byte, error) {
 		}
 		buf.WriteString(substituted)
 		if needSeparator {
-			buf.WriteString("\n---\n")
+			buf.WriteString(separator)
 		}
 	}
 
