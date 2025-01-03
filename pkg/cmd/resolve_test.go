@@ -160,3 +160,102 @@ func TestIgnoreFile(t *testing.T) {
 		})
 	}
 }
+
+func TestResolveAllFiles(t *testing.T) {
+	// Setup temporary files and directories for testing
+	tempDir := t.TempDir()
+
+	// Create test files
+	file1 := filepath.Join(tempDir, "file1.yaml")
+	file2 := filepath.Join(tempDir, "file2.json")
+	file3 := filepath.Join(tempDir, "ignore.txt")
+	subDir := filepath.Join(tempDir, "subdir")
+	subFile := filepath.Join(subDir, "file3.yaml")
+
+	if err := os.WriteFile(file1, []byte("test content"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+	if err := os.WriteFile(file2, []byte("test content"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+	if err := os.WriteFile(file3, []byte("test content"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+	if err := os.Mkdir(subDir, 0755); err != nil {
+		t.Fatalf("Failed to create test subdir: %v", err)
+	}
+	if err := os.WriteFile(subFile, []byte("test content"), 0644); err != nil {
+		t.Fatalf("Failed to create test subfile: %v", err)
+	}
+
+	tests := []struct {
+		name      string
+		filenames []string
+		recursive bool
+		want      []string
+		wantErr   bool
+	}{
+		{
+			name:      "Single file",
+			filenames: []string{file1},
+			recursive: false,
+			want:      []string{file1},
+			wantErr:   false,
+		},
+		{
+			name:      "Glob pattern",
+			filenames: []string{filepath.Join(tempDir, "*.yaml")},
+			recursive: false,
+			want:      []string{file1},
+			wantErr:   false,
+		},
+		{
+			name:      "Directory, non-recursive",
+			filenames: []string{tempDir},
+			recursive: false,
+			want:      []string{file1, file2},
+			wantErr:   false,
+		},
+		{
+			name:      "Directory, recursive",
+			filenames: []string{tempDir},
+			recursive: true,
+			want:      []string{file1, file2, subFile},
+			wantErr:   false,
+		},
+		{
+			name:      "Ignore unsupported file extension",
+			filenames: []string{file3},
+			recursive: false,
+			want:      []string{},
+			wantErr:   false,
+		},
+		{
+			name:      "URL as input",
+			filenames: []string{"https://example.com/file.yaml"},
+			recursive: false,
+			want:      []string{"https://example.com/file.yaml"},
+			wantErr:   false,
+		},
+		{
+			name:      "Invalid path",
+			filenames: []string{"/invalid/path/file.yaml"},
+			recursive: false,
+			want:      nil,
+			wantErr:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ResolveAllFiles(tt.filenames, tt.recursive)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ResolveAllFiles() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ResolveAllFiles() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
