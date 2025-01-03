@@ -12,7 +12,7 @@ test-cov:
 	go tool cover -html=$(COV_REPORT)
 
 test-integration:
-	KUBECTL_ENVSUBST_INTEGRATION_TESTS_AVAILABLE=0xcafebabe go test -v test/integration/*.go
+	KUBECTL_ENVSUBST_INTEGRATION_TESTS_AVAILABLE=0xcafebabe go test -v integration/*.go
 
 clean:
 	@rm -rf $(BINARY)
