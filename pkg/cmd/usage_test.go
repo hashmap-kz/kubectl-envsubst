@@ -2,10 +2,14 @@ package cmd
 
 import (
 	"strings"
+	"testing"
 )
 
-func UsageMessage() string {
-	var usageRaw = `
+// To prevent accidentally make a typo in a usage, just duplicate it. 
+
+func TestUsageMessage(t *testing.T) {
+
+	expected := strings.TrimSpace(`
 Expands environment variables in manifests, before applying them
 
 Usage:
@@ -30,7 +34,11 @@ Flags:
   --envsubst-allowed-prefixes
       Accepts a comma-separated list of prefixes. 
       Only variables with names starting with one of these prefixes will be substituted; others will be ignored.
-`
+`)
 
-	return strings.TrimSpace(usageRaw)
+	actual := UsageMessage()
+
+	if actual != expected {
+		t.Errorf("UsageMessage() returned unexpected result.\nExpected:\n%s\n\nGot:\n%s", expected, actual)
+	}
 }
