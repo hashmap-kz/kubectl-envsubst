@@ -41,20 +41,10 @@ stringData:
 	defer func() { os.Stdin = originalStdin }()
 	os.Stdin = tmpFile
 
-	flagsProxy := &CmdFlagsProxy{
-		Filenames: []string{
-			"../../testdata/immutable_data/pod.yaml",
-			"https://raw.githubusercontent.com/hashmap-kz/kubectl-envsubst/refs/heads/master/testdata/immutable_data/configmap.yaml",
-		},
-		EnvsubstAllowedVars:   []string{},
-		EnvsubstAllowedPrefix: []string{},
-		Recursive:             false,
-		Help:                  false,
-		Others:                []string{},
-		HasStdin:              true,
-	}
-
-	files, err := JoinFiles(flagsProxy)
+	files, err := JoinFiles([]string{
+		"../../testdata/immutable_data/pod.yaml",
+		"https://raw.githubusercontent.com/hashmap-kz/kubectl-envsubst/refs/heads/master/testdata/immutable_data/configmap.yaml",
+	}, true)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}

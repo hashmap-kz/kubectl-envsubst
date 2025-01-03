@@ -8,45 +8,37 @@ import (
 	"os"
 )
 
-func JoinFiles(flags *CmdFlagsProxy) ([]byte, error) {
+func JoinFiles(files []string, hasStdin bool) ([]byte, error) {
 	buf := bytes.Buffer{}
 
-	totalFiles := len(flags.Filenames)
-	if flags.HasStdin {
+	totalFiles := len(files)
+	if hasStdin {
 		totalFiles += 1
 	}
 	needSeparator := totalFiles > 1
 	const separator = "\n---\n"
 
 	// process STDIN
-	if flags.HasStdin {
+	if hasStdin {
 		stdin, err := io.ReadAll(os.Stdin)
 		if err != nil {
 			return nil, err
 		}
-		substituted, err := substBuf(flags, stdin)
-		if err != nil {
-			return nil, err
-		}
-		buf.WriteString(substituted)
+		buf.Write(stdin)
 		if needSeparator {
 			buf.WriteString(separator)
 		}
 	}
 
 	// process files
-	for _, f := range flags.Filenames {
+	for _, f := range files {
 		// passed as URL
 		if IsURL(f) {
 			data, err := readRemote(f)
 			if err != nil {
 				return nil, err
 			}
-			substituted, err := substBuf(flags, data)
-			if err != nil {
-				return nil, err
-			}
-			buf.WriteString(substituted)
+			buf.Write(data)
 			if needSeparator {
 				buf.WriteString(separator)
 			}
@@ -58,11 +50,7 @@ func JoinFiles(flags *CmdFlagsProxy) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		substituted, err := substBuf(flags, file)
-		if err != nil {
-			return nil, err
-		}
-		buf.WriteString(substituted)
+		buf.Write(file)
 		if needSeparator {
 			buf.WriteString(separator)
 		}
@@ -92,15 +80,4 @@ func readRemote(url string) ([]byte, error) {
 	}
 
 	return body, nil
-}
-
-func substBuf(flags *CmdFlagsProxy, data []byte) (string, error) {
-	// substitute environment variables
-	// strict mode is always ON
-	envSubst := NewEnvsubst(flags.EnvsubstAllowedVars, flags.EnvsubstAllowedPrefix, true)
-	substituted, err := envSubst.SubstituteEnvs(string(data))
-	if err != nil {
-		return "", err
-	}
-	return substituted, nil
 }

@@ -100,7 +100,7 @@ func TestResolveFilenames2(t *testing.T) {
 	// Execute test cases
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := resolveFilenames(test.path, test.recursive)
+			result, err := resolveFilenamesForPatterns(test.path, test.recursive)
 			if test.expectError {
 				if err == nil {
 					t.Errorf("expected an error but got none")
@@ -158,20 +158,5 @@ func TestIgnoreFile(t *testing.T) {
 				t.Errorf("ignoreFile(%q, %v) = %v, expected %v", tt.path, tt.extensions, result, tt.expected)
 			}
 		})
-	}
-}
-
-func TestResolveSingle(t *testing.T) {
-	tmpFile := filepath.Join(t.TempDir(), "file.yaml")
-	os.WriteFile(tmpFile, []byte{}, 0644)
-
-	proxy := &CmdFlagsProxy{Filenames: []string{}}
-	err := resolveSingle(tmpFile, proxy)
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-
-	if len(proxy.Filenames) != 1 || proxy.Filenames[0] != tmpFile {
-		t.Errorf("resolveSingle(%q) did not add the file to CmdFlagsProxy.Filenames", tmpFile)
 	}
 }
