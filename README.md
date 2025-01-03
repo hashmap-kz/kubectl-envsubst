@@ -334,9 +334,11 @@ deploy:
   environment:
     name: $CI_COMMIT_REF_NAME
   script:
+    - export APP_NAMESPACE="${CI_PROJECT_ROOT_NAMESPACE}-${CI_COMMIT_REF_NAME}"
+    - export ENVSUBST_ALLOWED_PREFIXES='CI_,APP_,INFRA_,IMAGE_'
     - kubectl create ns "${APP_NAMESPACE}" --dry-run=client -oyaml | kubectl apply -f -
     - kubectl config set-context --current --namespace="${APP_NAMESPACE}"
-    - kubectl envsubst apply -f "k8s-manifests/${CI_COMMIT_REF_NAME}" --envsubst-allowed-prefixes=CI_,APP_,INFRA_
+    - kubectl envsubst apply -f "k8s-manifests/${CI_COMMIT_REF_NAME}"
     - kubectl rollout restart deploy "${CI_PROJECT_NAME}"
 ```
 
