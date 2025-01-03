@@ -136,6 +136,7 @@ _A `kubectl` plugin for substituting environment variables in Kubernetes manifes
 Given a manifest file `deployment.yaml`:
 
 ```yaml
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -144,7 +145,13 @@ metadata:
     app: ${APP_NAME}
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: ${APP_NAME}
   template:
+    metadata:
+      labels:
+        app: ${APP_NAME}
     spec:
       containers:
         - name: ${APP_NAME}
@@ -155,8 +162,8 @@ spec:
 
 ```bash
 export APP_NAME=my-app
-export IMAGE_NAME=my-app-image
-export IMAGE_TAG=1.0
+export IMAGE_NAME=nginx
+export IMAGE_TAG='1.27.3-bookworm'
 ```
 
 #### Substitution with Allowed Variables
