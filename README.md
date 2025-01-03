@@ -366,33 +366,37 @@ In such cases, you may not have complete confidence that all substitutions were
 performed as expected.
 For this reason, it’s better to explicitly control which variables are substituted by using a filter list.
 
-#### **Behavior**:
+#### **Behavior**
 
-1. **Variables in Filters (Allowed for Substitution):**
-    - If a variable is included in either the `--envsubst-allowed-vars` list or matches a prefix in the
-      `--envsubst-allowed-prefixes` list but remains unexpanded:
-        - This will result in an **error** during the substitution process.
-        - The error occurs to ensure that all explicitly allowed variables are resolved.
+1. **Variables Included in Filters (Allowed for Substitution):**
+    - Variables listed in `--envsubst-allowed-vars` or matching a prefix in `--envsubst-allowed-prefixes`:
+        - **If Unexpanded**: This will result in an **error** during the substitution process.
+        - **Reason**: The error ensures all explicitly allowed variables are resolved to avoid deployment issues.
 
-2. **Variables Not in Filters (Not Allowed for Substitution):**
-    - If a variable is not included in the `--envsubst-allowed-vars` list and does not match any prefixes in the
-      `--envsubst-allowed-prefixes` list:
-        - The variable will remain unexpanded.
-        - This will not trigger an error during the substitution process but **may cause an error during the deploying
-          of the manifest** if the unresolved placeholder is incompatible with Kubernetes.
-        - In this example, placeholders within annotations are
-          not expanded unless explicitly allowed via `--envsubst-allowed-vars` or `--envsubst-allowed-prefixes`.
-          And this behavior is exactly what is expected.
-          ```yaml
-          some.controller.annotation/snippet: |
-            set $agentflag 0;
-            if ($http_user_agent ~* "(Android|iPhone|Windows Phone|UC|Kindle)" ) {
-              set $agentflag 1;
-            }
-            if ( $agentflag = 1 ) {
-              return 301 http://m.company.org;
-            }
-          ```
+2. **Variables Excluded from Filters (Not Allowed for Substitution):**
+    - Variables not listed in `--envsubst-allowed-vars` and not matching any prefix in `--envsubst-allowed-prefixes`:
+        - **Behavior**:
+            - The variable remains unexpanded.
+            - This does **not trigger an error** during substitution.
+            - Kubernetes deployment may fail if unresolved placeholders are incompatible with the manifest structure.
+
+3. **Expected Behavior for Specific Use Cases:**
+    - Certain placeholders, such as those in annotations, are intentionally **not expanded** unless explicitly allowed.
+    - Example:
+      ```yaml
+      annotations:
+        some.controller.annotation/snippet: |
+          set $agentflag 0;
+          if ($http_user_agent ~* "(Android|iPhone|Windows Phone|UC|Kindle)" ) {
+            set $agentflag 1;
+          }
+          if ( $agentflag = 1 ) {
+            return 301 http://m.company.org;
+          }
+      ```
+    - In the above case, placeholders remain unchanged unless explicitly allowed
+      via `--envsubst-allowed-vars` or `--envsubst-allowed-prefixes`.
+      This ensures manifest consistency and aligns with expected behavior.
 
 ---
 
