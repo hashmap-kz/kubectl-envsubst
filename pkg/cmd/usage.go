@@ -1,14 +1,8 @@
 package cmd
 
 import (
-	"os"
-	"path/filepath"
 	"strings"
 )
-
-func IsRunningAsPlugin() bool {
-	return strings.HasPrefix(filepath.Base(os.Args[0]), "kubectl-")
-}
 
 func UsageMessage() string {
 	var usageRaw = `
