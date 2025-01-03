@@ -157,7 +157,7 @@ func TestEnvsubstIntegrationFromUrl(t *testing.T) {
 	t.Log("running integration test: ", t.Name())
 	printEnvsubstVersionInfo(t)
 
-	const url = "https://raw.githubusercontent.com/hashmap-kz/kubectl-envsubst/refs/heads/integ/integration/immutable_data/01_deployment.yaml"
+	const url = "https://raw.githubusercontent.com/hashmap-kz/kubectl-envsubst/refs/heads/master/test/integration/immutable_data/01_deployment.yaml"
 	resourceName := randomIdent(32)
 	defer cleanupResource(t, "deployment", resourceName)
 
