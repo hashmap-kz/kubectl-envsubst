@@ -116,3 +116,62 @@ func TestResolveFilenames2(t *testing.T) {
 		})
 	}
 }
+
+func TestIsURL(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected bool
+	}{
+		{"Valid HTTP URL", "http://example.com", true},
+		{"Valid HTTPS URL", "https://example.com", true},
+		{"Invalid URL", "example.com", false},
+		{"Empty String", "", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := IsURL(tt.input)
+			if result != tt.expected {
+				t.Errorf("IsURL(%q) = %v, expected %v", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestIgnoreFile(t *testing.T) {
+	tests := []struct {
+		name       string
+		path       string
+		extensions []string
+		expected   bool
+	}{
+		{"Allowed Extension", "file.yaml", []string{".json", ".yaml"}, false},
+		{"Disallowed Extension", "file.txt", []string{".json", ".yaml"}, true},
+		{"Empty Extensions", "file.yaml", []string{}, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ignoreFile(tt.path, tt.extensions)
+			if result != tt.expected {
+				t.Errorf("ignoreFile(%q, %v) = %v, expected %v", tt.path, tt.extensions, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestResolveSingle(t *testing.T) {
+	tmpFile := filepath.Join(t.TempDir(), "file.yaml")
+	os.WriteFile(tmpFile, []byte{}, 0644)
+
+	proxy := &CmdFlagsProxy{Filenames: []string{}}
+	err := resolveSingle(tmpFile, proxy)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	if len(proxy.Filenames) != 1 || proxy.Filenames[0] != tmpFile {
+		t.Errorf("resolveSingle(%q) did not add the file to CmdFlagsProxy.Filenames", tmpFile)
+	}
+}

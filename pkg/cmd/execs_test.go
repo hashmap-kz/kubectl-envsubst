@@ -1,19 +1,51 @@
 package cmd
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestExecWithStdin(t *testing.T) {
-	input := "hello stdin"
-	result, err := ExecWithStdin("cat", []byte(input))
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
+	t.Run("Successful Execution", func(t *testing.T) {
+		// Command and input content
+		command := "cat" // `cat` reads from stdin and echoes to stdout
+		input := []byte("Hello, World!")
 
-	if result.StdoutContent != input {
-		t.Errorf("expected stdout to be '%v', got %v", input, result.StdoutContent)
-	}
+		// Execute the command
+		result, err := ExecWithStdin(command, input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
 
-	if result.StderrContent != "" {
-		t.Errorf("expected stderr to be empty, got %v", result.StderrContent)
-	}
+		// Validate stdout
+		if result.StdoutContent != string(input) {
+			t.Errorf("Expected stdout: %q, got: %q", string(input), result.StdoutContent)
+		}
+
+		// Validate stderr
+		if result.StderrContent != "" {
+			t.Errorf("Expected no stderr, got: %q", result.StderrContent)
+		}
+	})
+
+	t.Run("Command Error", func(t *testing.T) {
+		// Invalid command to simulate error
+		command := "nonexistent_command"
+		input := []byte("This won't be used")
+
+		// Execute the command
+		result, err := ExecWithStdin(command, input)
+
+		// Validate error
+		if err == nil {
+			t.Fatal("Expected error, got nil")
+		}
+
+		// Validate stdout and stderr are empty
+		if result.StdoutContent != "" {
+			t.Errorf("Expected empty stdout, got: %q", result.StdoutContent)
+		}
+		if result.StderrContent == "" {
+			t.Errorf("Expected stderr to contain error message, got empty")
+		}
+	})
 }
