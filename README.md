@@ -21,6 +21,7 @@ _A `kubectl` plugin for substituting environment variables in Kubernetes manifes
     - [Configure Using Environment Variables](#2-configure-using-environment-variables)
 - [Usage](#usage-examples)
     - [Basic Usage](#basic-substitution-example)
+    - [Substitution Along with Other `kubectl apply` Options](#substitution-along-with-other-kubectl-apply-options)
     - [Advanced Usage](#advanced-usage-typical-scenario-in-cicd)
 - [Implementation details](#implementation-details)
     - [Variable expansion behaviour](#variable-expansion-and-filtering-behavior)
@@ -178,6 +179,41 @@ kubectl envsubst apply --filename=deployment.yaml \
 ```bash
 kubectl envsubst apply --filename=deployment.yaml \
   --envsubst-allowed-prefixes=APP_,IMAGE_
+```
+
+---
+
+### **Substitution Along with Other `kubectl apply` Options**
+
+Configure CLI for Prefix Substitution:
+
+```bash
+export ENVSUBST_ALLOWED_PREFIXES='APP_,IMAGE_'
+```
+
+Apply resources in dry-run mode to see the expected output before applying:
+
+```bash
+kubectl envsubst apply -f deployment.yaml --dry-run=client -o yaml
+```
+
+Recursively process all files in a directory while using dry-run mode:
+
+```bash
+kubectl envsubst apply -f manifests/ --recursive --dry-run=client -o yaml
+```
+
+Use redirection from stdin to apply the manifest:
+
+```bash
+cat deployment.yaml | kubectl envsubst apply -f -
+```
+
+Process and apply a manifest located on a remote server:
+
+```bash
+kubectl envsubst apply \
+  -f https://raw.githubusercontent.com/user/repo/refs/heads/master/manifests/deployment.yaml
 ```
 
 ---
