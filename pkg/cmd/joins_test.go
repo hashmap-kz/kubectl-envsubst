@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestJoinFiles(t *testing.T) {
+func TestJoinFiles_StdinUrlFilename(t *testing.T) {
 	// Create a temporary file to mimic stdin
 	tmpFile, err := os.CreateTemp("", "mock_stdin")
 	if err != nil {
@@ -44,7 +44,7 @@ stringData:
 	flagsProxy := &CmdFlagsProxy{
 		Filenames: []string{
 			"../../testdata/immutable_data/pod.yaml",
-			"https://raw.githubusercontent.com/hashmap-kz/kubectl-envsubst/refs/heads/master/testdata/immutable_data/pod.yaml",
+			"https://raw.githubusercontent.com/hashmap-kz/kubectl-envsubst/refs/heads/master/testdata/immutable_data/configmap.yaml",
 		},
 		EnvsubstAllowedVars:   []string{},
 		EnvsubstAllowedPrefix: []string{},
@@ -64,10 +64,13 @@ stringData:
 
 	content := string(files)
 	if !strings.Contains(content, "name: nginx-container") {
-		t.Error("Expecting pod manifests if read")
+		t.Error("Expecting pod manifests is read")
 	}
 	if !strings.Contains(content, "name: test-secret") {
-		t.Error("Expecting secret manifests if read")
+		t.Error("Expecting secret manifests is read")
+	}
+	if !strings.Contains(content, "executor = LocalExecutor") {
+		t.Error("Expecting configmap manifests is read")
 	}
 }
 
