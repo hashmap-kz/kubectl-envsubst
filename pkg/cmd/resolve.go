@@ -21,6 +21,8 @@ func ResolveAllFiles(filenames []string, recursive bool) ([]string, error) {
 		}
 		result = append(result, files...)
 	}
+	// Ensure consistent order
+	sort.Strings(result)
 	return result, nil
 }
 
