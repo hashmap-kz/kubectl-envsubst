@@ -12,25 +12,19 @@
 *.out
 
 # Dependency directories (remove the comment below to include it)
- vendor/
- media
+vendor/
+media
 
 dist/
-
-# Config files
-internal/config/apple_config_files
-/internal/config/configs.env
-/internal/config/config_file.go
 
 # Enviroment files
 envs/
 main
 .idea
-pgdata
-vendor
 
 # Avatars storage directory
 avatars/
 
 backups/
 cover.out
+coverage.txt
