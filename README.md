@@ -10,6 +10,27 @@ _A `kubectl` plugin for substituting environment variables in Kubernetes manifes
 
 ---
 
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+    - [Using Krew](#using-krew)
+    - [Manual Installation](#manual-installation)
+- [Flags](#flags)
+    - [Configure Using Command-Line Flags](#1-configure-using-command-line-flags)
+    - [Configure Using Environment Variables](#2-configure-using-environment-variables)
+- [Usage](#usage-examples)
+    - [Basic Usage](#basic-substitution-example)
+    - [Advanced Usage](#advanced-usage-typical-scenario-in-cicd)
+- [Implementation details](#implementation-details)
+    - [Variable expansion behaviour](#variable-expansion-and-filtering-behavior)
+- [Brief conclusion](#brief-conclusion)
+- [Contributing](#contributing)
+- [License](#license)
+- [Additional resources](#additional-resources)
+
+---
+
 ## **Features**
 
 - **Environment Variable Substitution**: Replaces placeholders in Kubernetes manifests with environment variable values.
@@ -47,54 +68,17 @@ _A `kubectl` plugin for substituting environment variables in Kubernetes manifes
 
 ---
 
-## **Usage**
-
-### Basic Variable Substitution
-
-```bash
-export IMAGE_TAG=v1.2.3
-
-kubectl envsubst apply -f manifests/ \
-    --envsubst-allowed-vars=IMAGE_TAG
-```
-
-### Using Prefixes
-
-```bash
-export APP_PROJECT_NAME=auth-svc
-export APP_PROJECT_NAMESPACE=trade-system-prod
-export INFRA_DOMAIN_NAME=company.org
-
-kubectl envsubst apply -f manifests/ \
-    --envsubst-allowed-prefixes=APP_,INFRA_
-```
-
-### Mixed mode
-
-```bash
-export APP_PROJECT_NAME=auth-svc
-export APP_PROJECT_NAMESPACE=trade-system-prod
-export INFRA_DOMAIN_NAME=company.org
-export HOST=svc.company.org
-export PORT=1024
-
-kubectl envsubst apply -f manifests/ \
-    --envsubst-allowed-prefixes=APP_,INFRA_ \
-    --envsubst-allowed-vars=HOST,PORT
-```
-
----
-
 ## **Flags**:
 
-### **1. Using Command-Line Flags**
+### **1. Configure Using Command-Line Flags**
 
 #### `--envsubst-allowed-vars`
 
 - **Description**: Specifies a comma-separated list of variable names that are explicitly allowed for substitution.
 - **Usage**:
   ```bash
-  --envsubst-allowed-vars=HOME,USER,PKEY_PATH,DB_PASS,IMAGE_NAME,IMAGE_TAG
+  kubectl envsubst apply -f deployment.yaml \
+    --envsubst-allowed-vars=HOME,USER,PKEY_PATH,DB_PASS,IMAGE_NAME,IMAGE_TAG
   ```
 - **Behavior**:
     - Variables not included in this list will not be substituted.
@@ -105,7 +89,8 @@ kubectl envsubst apply -f manifests/ \
 - **Description**: Specifies a comma-separated list of prefixes to filter variables by name.
 - **Usage**:
   ```bash
-  --envsubst-allowed-prefixes=APP_,CI_
+  kubectl envsubst apply -f deployment.yaml \
+    --envsubst-allowed-prefixes=APP_,CI_
   ```
 - **Behavior**:
     - Only variables with names starting with one of the specified prefixes will be substituted.
@@ -113,7 +98,7 @@ kubectl envsubst apply -f manifests/ \
 
 ---
 
-### **2. Using Environment Variables**
+### **2. Configure Using Environment Variables**
 
 #### `ENVSUBST_ALLOWED_VARS`
 
@@ -121,6 +106,7 @@ kubectl envsubst apply -f manifests/ \
 - **Usage**:
   ```bash
   export ENVSUBST_ALLOWED_VARS='HOST,USER,PKEY_PATH'
+  kubectl envsubst apply -f deployment.yaml
   ```
 
 #### `ENVSUBST_ALLOWED_PREFIXES`
@@ -129,11 +115,12 @@ kubectl envsubst apply -f manifests/ \
 - **Usage**:
   ```bash
   export ENVSUBST_ALLOWED_PREFIXES='CI_,APP_'
+  kubectl envsubst apply -f deployment.yaml
   ```
 
 ---
 
-### **NOTE: CLI Takes Precedence Over Environment Variables**
+### **Note: CLI Takes Precedence Over Environment Variables**
 
 - **Priority**: If both CLI flags and environment variables are set:
     - **CLI flags** (`--envsubst-allowed-vars`, `--envsubst-allowed-prefixes`) will **override** their respective
@@ -142,59 +129,60 @@ kubectl envsubst apply -f manifests/ \
 
 ---
 
-## **Variable Expansion and Filtering Behavior**
+## Usage Examples
 
-### **Description**
+### **Basic Substitution Example**
 
-The behavior of variable substitution is determined by the inclusion of variables in the `--envsubst-allowed-vars` or
-`--envsubst-allowed-prefixes` lists and whether the variables remain unresolved.
+Given a manifest file `deployment.yaml`:
 
-Substitution of environment variables without verifying their inclusion in a filter list is intentionally
-avoided, as this behavior can lead to subtle errors.
+```yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${APP_NAME}
+  labels:
+    app: ${APP_NAME}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ${APP_NAME}
+  template:
+    metadata:
+      labels:
+        app: ${APP_NAME}
+    spec:
+      containers:
+        - name: ${APP_NAME}
+          image: ${IMAGE_NAME}:${IMAGE_TAG}
+```
 
-If a variable is not found in the filter list, an error will be returned.
+#### Export required environment variables:
 
-Expanding manifests with all available environment variables can work fine
-for simple cases, such as when your manifest contains only a service and a deployment
-with a few variables to substitute.
-However, this approach becomes challenging to debug when dealing with more complex
-scenarios, such as applying dozens of manifests involving ConfigMaps, Secrets, CRDs, and other resources.
+```bash
+export APP_NAME=my-app
+export IMAGE_NAME=nginx
+export IMAGE_TAG='1.27.3-bookworm'
+```
 
-In such cases, you may not have complete confidence that all substitutions were
-performed as expected.
-For this reason, it’s better to explicitly control which variables are substituted by using a filter list.
+#### Substitution with Allowed Variables
 
-### **Behavior**:
+```bash
+kubectl envsubst apply --filename=deployment.yaml \
+  --envsubst-allowed-vars=APP_NAME,IMAGE_NAME,IMAGE_TAG
+```
 
-1. **Variables in Filters (Allowed for Substitution):**
-    - If a variable is included in either the `--envsubst-allowed-vars` list or matches a prefix in the
-      `--envsubst-allowed-prefixes` list but remains unexpanded:
-        - This will result in an **error** during the substitution process.
-        - The error occurs to ensure that all explicitly allowed variables are resolved.
+#### Substitution with Allowed Prefixes
 
-2. **Variables Not in Filters (Not Allowed for Substitution):**
-    - If a variable is not included in the `--envsubst-allowed-vars` list and does not match any prefixes in the
-      `--envsubst-allowed-prefixes` list:
-        - The variable will remain unexpanded.
-        - This will not trigger an error during the substitution process but **may cause an error during the deploying
-          of the manifest** if the unresolved placeholder is incompatible with Kubernetes.
-        - In this example, placeholders within annotations are
-          not expanded unless explicitly allowed via `--envsubst-allowed-vars` or `--envsubst-allowed-prefixes`.
-          And this behavior is exactly what is expected.
-          ```yaml
-          some.controller.annotation/snippet: |
-            set $agentflag 0;
-            if ($http_user_agent ~* "(Android|iPhone|Windows Phone|UC|Kindle)" ) {
-              set $agentflag 1;
-            }
-            if ( $agentflag = 1 ) {
-              return 301 http://m.company.org;
-            }
-          ```
+```bash
+kubectl envsubst apply --filename=deployment.yaml \
+  --envsubst-allowed-prefixes=APP_,IMAGE_
+```
 
 ---
 
-## **Usage scenario in CI/CD**
+### **Advanced usage (typical scenario in CI/CD)**
 
 A typical setup for a microservice with dev, stage, and prod environments may look like this:
 
@@ -303,7 +291,7 @@ deploy:
     - chmod +x ./kubectl
     - cp ./kubectl /usr/local/bin
     # setup kubectl-envsubst plugin
-    - wget -O- "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/v1.0.6/kubectl-envsubst_v1.0.6_linux_amd64.tar.gz" | \
+    - wget -O- "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/v1.0.14/kubectl-envsubst_v1.0.14_linux_amd64.tar.gz" | \
       tar -xzf - -C /usr/local/bin && chmod +x /usr/local/bin/kubectl-envsubst
   tags:
     - dind
@@ -315,6 +303,60 @@ deploy:
     - kubectl envsubst apply -f "k8s-manifests/${CI_COMMIT_REF_NAME}" --envsubst-allowed-prefixes=CI_,APP_,INFRA_
     - kubectl rollout restart deploy "${CI_PROJECT_NAME}"
 ```
+
+---
+
+## **Implementation details**
+
+### **Variable Expansion and Filtering Behavior**
+
+#### **Description**
+
+The behavior of variable substitution is determined by the inclusion of variables in the `--envsubst-allowed-vars` or
+`--envsubst-allowed-prefixes` lists and whether the variables remain unresolved.
+
+Substitution of environment variables without verifying their inclusion in a filter list is intentionally
+avoided, as this behavior can lead to subtle errors.
+
+If a variable is not found in the filter list, an error will be returned.
+
+Expanding manifests with all available environment variables can work fine
+for simple cases, such as when your manifest contains only a service and a deployment
+with a few variables to substitute.
+However, this approach becomes challenging to debug when dealing with more complex
+scenarios, such as applying dozens of manifests involving ConfigMaps, Secrets, CRDs, and other resources.
+
+In such cases, you may not have complete confidence that all substitutions were
+performed as expected.
+For this reason, it’s better to explicitly control which variables are substituted by using a filter list.
+
+#### **Behavior**:
+
+1. **Variables in Filters (Allowed for Substitution):**
+    - If a variable is included in either the `--envsubst-allowed-vars` list or matches a prefix in the
+      `--envsubst-allowed-prefixes` list but remains unexpanded:
+        - This will result in an **error** during the substitution process.
+        - The error occurs to ensure that all explicitly allowed variables are resolved.
+
+2. **Variables Not in Filters (Not Allowed for Substitution):**
+    - If a variable is not included in the `--envsubst-allowed-vars` list and does not match any prefixes in the
+      `--envsubst-allowed-prefixes` list:
+        - The variable will remain unexpanded.
+        - This will not trigger an error during the substitution process but **may cause an error during the deploying
+          of the manifest** if the unresolved placeholder is incompatible with Kubernetes.
+        - In this example, placeholders within annotations are
+          not expanded unless explicitly allowed via `--envsubst-allowed-vars` or `--envsubst-allowed-prefixes`.
+          And this behavior is exactly what is expected.
+          ```yaml
+          some.controller.annotation/snippet: |
+            set $agentflag 0;
+            if ($http_user_agent ~* "(Android|iPhone|Windows Phone|UC|Kindle)" ) {
+              set $agentflag 1;
+            }
+            if ( $agentflag = 1 ) {
+              return 301 http://m.company.org;
+            }
+          ```
 
 ---
 
