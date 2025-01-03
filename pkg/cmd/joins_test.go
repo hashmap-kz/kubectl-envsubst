@@ -44,6 +44,7 @@ stringData:
 	flagsProxy := &CmdFlagsProxy{
 		Filenames: []string{
 			"../../testdata/immutable_data/pod.yaml",
+			"https://raw.githubusercontent.com/hashmap-kz/kubectl-envsubst/refs/heads/master/testdata/immutable_data/pod.yaml",
 		},
 		EnvsubstAllowedVars:   []string{},
 		EnvsubstAllowedPrefix: []string{},
