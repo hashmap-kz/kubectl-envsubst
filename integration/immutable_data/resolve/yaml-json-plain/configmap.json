@@ -1,0 +1,12 @@
+{
+  "apiVersion": "v1",
+  "kind": "ConfigMap",
+  "metadata": {
+    "name": "my-app",
+    "namespace": "kubectl-envsubst-tmpns-testmix"
+  },
+  "data": {
+    "APP_ENV": "production",
+    "APP_DEBUG": "false"
+  }
+}
