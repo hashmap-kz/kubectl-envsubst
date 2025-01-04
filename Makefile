@@ -22,7 +22,7 @@ test:
 # Run tests with coverage
 .PHONY: test-cov
 test-cov:
-	go test -coverprofile=$(COV_REPORT) ./...
+	go test -coverprofile=$(COV_REPORT) -coverpkg=./pkg/...,!./integration/... ./...
 	go tool cover -html=$(COV_REPORT)
 
 # Setup kind-cluster (for running integration tests in a sandbox)
