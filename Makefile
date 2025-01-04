@@ -4,6 +4,7 @@ BINARY := kubectl-envsubst
 COV_REPORT := coverage.txt
 TEST_FLAGS := -v -race -timeout 30s
 KIND_CLUSTER_NAME := kubectl-envsubst
+INSTALL_DIR := /usr/local/bin
 
 # Default target
 .PHONY: all
@@ -13,6 +14,12 @@ all: build
 .PHONY: build
 build: $(SOURCES)
 	CGO_ENABLED=0 go build -ldflags="-s -w" ./cmd/$(BINARY).go
+
+# Install the binary to /usr/local/bin
+.PHONY: install
+install: build
+	@echo "Installing $(BINARY) to $(INSTALL_DIR)..."
+	@install -m 0755 $(BINARY) $(INSTALL_DIR)
 
 # Run unit tests
 .PHONY: test
@@ -38,15 +45,13 @@ kind-teardown:
 
 # Run integration tests
 .PHONY: test-integration
-test-integration:
-	$(MAKE) kind-setup
+test-integration: install kind-setup
 	KUBECTL_ENVSUBST_INTEGRATION_TESTS_AVAILABLE=0xcafebabe go test -v integration/*.go
 	$(MAKE) kind-teardown
 
 # Run integration tests for the 'main' function
 .PHONY: test-integration-cmd
-test-integration-cmd:
-	$(MAKE) kind-setup
+test-integration-cmd: install kind-setup
 	KUBECTL_ENVSUBST_INTEGRATION_TESTS_AVAILABLE=0xcafebabe go test -v cmd/*.go
 	$(MAKE) kind-teardown
 
