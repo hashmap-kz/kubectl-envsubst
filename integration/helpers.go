@@ -2,6 +2,8 @@ package integration
 
 import (
 	"bufio"
+	"bytes"
+	"fmt"
 	"math/rand"
 	"os/exec"
 	"strings"
@@ -17,7 +19,7 @@ func randomIdent(length int) string {
 	for i := range b {
 		b[i] = charset[seededRand.Intn(len(charset))]
 	}
-	return strings.ToLower("I" + string(b))
+	return strings.ToLower("kubectl-envsubst-" + string(b))
 }
 
 func cleanupResource(t *testing.T, kind, name string) {
@@ -28,7 +30,16 @@ func cleanupResource(t *testing.T, kind, name string) {
 }
 
 func createNs(t *testing.T, ns string) {
-	cmd := exec.Command("kubectl", "create", "ns", ns)
+	template := `
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: "%s"
+`
+	nsp := fmt.Sprintf(template, ns)
+	cmd := exec.Command("kubectl", "apply", "-f", "-")
+	cmd.Stdin = bytes.NewReader([]byte(nsp))
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatal(err)

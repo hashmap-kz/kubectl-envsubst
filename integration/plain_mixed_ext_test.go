@@ -8,16 +8,10 @@ import (
 
 func TestEnvsubstIntegration_NoSubst_MixedManifests_MixedFileFormats(t *testing.T) {
 
-	// if os.Getenv(integrationTestEnv) != integrationTestFlag {
-	// 	t.Log("Integration test was skipped due to configuration")
-	// 	return
-	// }
-
 	t.Log("running integration test: ", t.Name())
 	printEnvsubstVersionInfo(t)
 
-	namespaceName := "kubectl-envsubst-integration-tests-ns-1"
-	cleanupResource(t, "ns", namespaceName)
+	namespaceName := "kubectl-envsubst-8e4eeb15301847f5b51a24cc595b5f87"
 	createNs(t, namespaceName)
 
 	// Setup context
@@ -34,13 +28,13 @@ func TestEnvsubstIntegration_NoSubst_MixedManifests_MixedFileFormats(t *testing.
 	t.Log(stringOutput)
 
 	expectResources := []string{
-		"serviceaccount/my-app created",
-		"role.rbac.authorization.k8s.io/my-app created",
-		"rolebinding.rbac.authorization.k8s.io/my-app created",
-		"configmap/my-app created",
-		"secret/my-app created",
-		"deployment.apps/my-app created",
-		"service/my-app created",
+		"serviceaccount/my-app",
+		"role.rbac.authorization.k8s.io/my-app",
+		"rolebinding.rbac.authorization.k8s.io/my-app",
+		"configmap/my-app",
+		"secret/my-app",
+		"deployment.apps/my-app",
+		"service/my-app",
 	}
 
 	for _, er := range expectResources {

@@ -10,11 +10,6 @@ import (
 
 func TestEnvsubstIntegration_SubstApplyFromUrl(t *testing.T) {
 
-	// if os.Getenv(integrationTestEnv) != integrationTestFlag {
-	// 	t.Log("Integration test was skipped due to configuration")
-	// 	return
-	// }
-
 	t.Log("running integration test: ", t.Name())
 	printEnvsubstVersionInfo(t)
 
