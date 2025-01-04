@@ -3,7 +3,7 @@
   "kind": "RoleBinding",
   "metadata": {
     "name": "my-app",
-    "namespace": "kubectl-envsubst-tmpns-testmix"
+    "namespace": "kubectl-envsubst-integration-tests-ns-2"
   },
   "roleRef": {
     "apiGroup": "rbac.authorization.k8s.io",
@@ -14,7 +14,7 @@
     {
       "kind": "ServiceAccount",
       "name": "my-app",
-      "namespace": "kubectl-envsubst-tmpns-testmix"
+      "namespace": "kubectl-envsubst-integration-tests-ns-2"
     }
   ]
 }

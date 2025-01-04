@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  namespace: kubectl-envsubst-tmpns-testmix
+  namespace: kubectl-envsubst-integration-tests-ns-2
   name: my-app
 rules:
   - apiGroups: [""]

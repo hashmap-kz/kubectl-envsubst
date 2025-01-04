@@ -3,7 +3,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: my-app
-  namespace: kubectl-envsubst-tmpns-testmix
+  namespace: kubectl-envsubst-integration-tests-ns-2
 spec:
   selector:
     app: my-app

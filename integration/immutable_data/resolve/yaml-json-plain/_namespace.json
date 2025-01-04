@@ -1,0 +1,7 @@
+{
+  "apiVersion": "v1",
+  "kind": "Namespace",
+  "metadata": {
+    "name": "kubectl-envsubst-integration-tests-ns-2"
+  }
+}
