@@ -1,0 +1,26 @@
+---
+name: ci
+on:
+  - push
+jobs:
+  ci_job:
+    name: test
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      # docs: https://github.com/helm/kind-action
+      - name: Prepare kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: kubectl-envsubst
+          install_only: true
+          kubectl_version: "v1.31.1"
+      - name: Run unit tests
+        run: make test
+      # Note: makefile stages: build/install/kind-setup/test-integration
+      - name: Run integration tests
+        run: make test-integration
+      # Note: makefile stages: build/install/kind-setup/test-integration-cmd
+      - name: Run integration tests for cmd
+        run: make test-integration-cmd
