@@ -19,7 +19,7 @@ func TestReadRemote(t *testing.T) {
 				}
 			}),
 		}
-		result, err := readRemoteFileContent("http://example.com/data")
+		result, err := ReadRemoteFileContent("http://example.com/data")
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -37,7 +37,7 @@ func TestReadRemote(t *testing.T) {
 				}
 			}),
 		}
-		_, err := readRemoteFileContent("http://example.com/not-found")
+		_, err := ReadRemoteFileContent("http://example.com/not-found")
 		if err == nil {
 			t.Error("Expected error but got none")
 		}
