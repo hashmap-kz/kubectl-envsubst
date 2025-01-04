@@ -18,7 +18,7 @@ const (
 
 // basic
 
-func TestEnvsubstIntegrationFromFile(t *testing.T) {
+func TestEnvsubstIntegration_SubstApplyFromFile(t *testing.T) {
 
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("integration test was skipped due to configuration")
@@ -70,7 +70,7 @@ func TestEnvsubstIntegrationFromFile(t *testing.T) {
 
 }
 
-func TestEnvsubstIntegrationFromStdin(t *testing.T) {
+func TestEnvsubstIntegration_SubstApplyFromStdin(t *testing.T) {
 
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("integration test was skipped due to configuration")
@@ -147,7 +147,7 @@ spec:
 
 }
 
-func TestEnvsubstIntegrationFromUrl(t *testing.T) {
+func TestEnvsubstIntegration_SubstApplyFromUrl(t *testing.T) {
 
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("Integration test was skipped due to configuration")
@@ -202,7 +202,7 @@ func TestEnvsubstIntegrationFromUrl(t *testing.T) {
 
 // mixed substitution
 
-func TestEnvsubstIntegrationConfigmapMixed(t *testing.T) {
+func TestEnvsubstIntegration_SubstApplyConfigmapMixed(t *testing.T) {
 
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("integration test was skipped due to configuration")
@@ -292,6 +292,286 @@ server {
 	}
 }
 
+func TestEnvsubstIntegration_SubstMixedManifestsCombined(t *testing.T) {
+
+	if os.Getenv(integrationTestEnv) != integrationTestFlag {
+		t.Log("Integration test was skipped due to configuration")
+		return
+	}
+
+	t.Log("running integration test: ", t.Name())
+	printEnvsubstVersionInfo(t)
+
+	namespaceName := randomIdent(32)
+	createNs(t, namespaceName)
+	defer cleanupResource(t, "ns", namespaceName)
+
+	// Setup environment variables that was used in substitution
+	os.Setenv("IMAGE_NAME", "nginx")
+	os.Setenv("IMAGE_TAG", "latest")
+	os.Setenv("APP_NAMESPACE", namespaceName)
+	os.Setenv("APP_NAME", "my-app")
+	defer os.Unsetenv("IMAGE_NAME")
+	defer os.Unsetenv("IMAGE_TAG")
+	defer os.Unsetenv("APP_NAMESPACE")
+	defer os.Unsetenv("APP_NAME")
+
+	// configure CLI
+	os.Setenv("ENVSUBST_ALLOWED_PREFIXES", "APP_,IMAGE_")
+	defer os.Unsetenv("ENVSUBST_ALLOWED_PREFIXES")
+
+	// Setup context
+	setContextNs(t, namespaceName)
+	defer setContextNs(t, "default")
+
+	// Run kubectl-envsubst
+
+	cmdEnvsubstApply := exec.Command("kubectl", "envsubst", "apply", "-f", "immutable_data/resolve/subst-combined")
+	output, err := cmdEnvsubstApply.CombinedOutput()
+	stringOutput := string(output)
+	if err != nil {
+		t.Fatalf("Failed to run kubectl envsubst: %v, output: %s", err, stringOutput)
+	}
+	t.Log(stringOutput)
+
+	expectResources := []string{
+		"serviceaccount/my-app created",
+		"role.rbac.authorization.k8s.io/my-app created",
+		"rolebinding.rbac.authorization.k8s.io/my-app created",
+		"configmap/my-app created",
+		"secret/my-app created",
+		"deployment.apps/my-app created",
+		"service/my-app created",
+	}
+
+	for _, er := range expectResources {
+		// Check result (it should be created/updated/unchanged, etc...)
+		expectedOutput := strings.Contains(stringOutput, er)
+		if !expectedOutput {
+			t.Errorf("Expected substituted output to contain '%s', got %s", er, stringOutput)
+		}
+	}
+
+}
+
+func TestEnvsubstIntegration_SubstMixedManifestsSeparated(t *testing.T) {
+
+	if os.Getenv(integrationTestEnv) != integrationTestFlag {
+		t.Log("Integration test was skipped due to configuration")
+		return
+	}
+
+	t.Log("running integration test: ", t.Name())
+	printEnvsubstVersionInfo(t)
+
+	namespaceName := randomIdent(32)
+	createNs(t, namespaceName)
+	defer cleanupResource(t, "ns", namespaceName)
+
+	// Setup environment variables that was used in substitution
+	os.Setenv("IMAGE_NAME", "nginx")
+	os.Setenv("IMAGE_TAG", "latest")
+	os.Setenv("APP_NAMESPACE", namespaceName)
+	os.Setenv("APP_NAME", "my-app")
+	defer os.Unsetenv("IMAGE_NAME")
+	defer os.Unsetenv("IMAGE_TAG")
+	defer os.Unsetenv("APP_NAMESPACE")
+	defer os.Unsetenv("APP_NAME")
+
+	// configure CLI
+	os.Setenv("ENVSUBST_ALLOWED_PREFIXES", "APP_,IMAGE_")
+	defer os.Unsetenv("ENVSUBST_ALLOWED_PREFIXES")
+
+	// Setup context
+	setContextNs(t, namespaceName)
+	defer setContextNs(t, "default")
+
+	// Run kubectl-envsubst
+
+	cmdEnvsubstApply := exec.Command("kubectl", "envsubst", "apply", "-f", "immutable_data/resolve/subst-separated")
+	output, err := cmdEnvsubstApply.CombinedOutput()
+	stringOutput := string(output)
+	if err != nil {
+		t.Fatalf("Failed to run kubectl envsubst: %v, output: %s", err, stringOutput)
+	}
+	t.Log(stringOutput)
+
+	expectResources := []string{
+		"serviceaccount/my-app created",
+		"role.rbac.authorization.k8s.io/my-app created",
+		"rolebinding.rbac.authorization.k8s.io/my-app created",
+		"configmap/my-app created",
+		"secret/my-app created",
+		"deployment.apps/my-app created",
+		"service/my-app created",
+	}
+
+	for _, er := range expectResources {
+		// Check result (it should be created/updated/unchanged, etc...)
+		expectedOutput := strings.Contains(stringOutput, er)
+		if !expectedOutput {
+			t.Errorf("Expected substituted output to contain '%s', got %s", er, stringOutput)
+		}
+	}
+
+}
+
+func TestEnvsubstIntegration_Subst_MixedManifests_MixedExtensions_MixedFileFormats(t *testing.T) {
+
+	if os.Getenv(integrationTestEnv) != integrationTestFlag {
+		t.Log("Integration test was skipped due to configuration")
+		return
+	}
+
+	t.Log("running integration test: ", t.Name())
+	printEnvsubstVersionInfo(t)
+
+	namespaceName := randomIdent(32)
+	createNs(t, namespaceName)
+	defer cleanupResource(t, "ns", namespaceName)
+
+	// Setup environment variables that was used in substitution
+	os.Setenv("IMAGE_NAME", "nginx")
+	os.Setenv("IMAGE_TAG", "latest")
+	os.Setenv("APP_NAMESPACE", namespaceName)
+	os.Setenv("APP_NAME", "my-app")
+	defer os.Unsetenv("IMAGE_NAME")
+	defer os.Unsetenv("IMAGE_TAG")
+	defer os.Unsetenv("APP_NAMESPACE")
+	defer os.Unsetenv("APP_NAME")
+
+	// configure CLI
+	os.Setenv("ENVSUBST_ALLOWED_PREFIXES", "APP_,IMAGE_")
+	defer os.Unsetenv("ENVSUBST_ALLOWED_PREFIXES")
+
+	// Setup context
+	setContextNs(t, namespaceName)
+	defer setContextNs(t, "default")
+
+	// Run kubectl-envsubst
+
+	cmdEnvsubstApply := exec.Command("kubectl", "envsubst", "apply", "-f", "immutable_data/resolve/subst-yaml-json")
+	output, err := cmdEnvsubstApply.CombinedOutput()
+	stringOutput := string(output)
+	if err != nil {
+		t.Fatalf("Failed to run kubectl envsubst: %v, output: %s", err, stringOutput)
+	}
+	t.Log(stringOutput)
+
+	expectResources := []string{
+		"serviceaccount/my-app created",
+		"role.rbac.authorization.k8s.io/my-app created",
+		"rolebinding.rbac.authorization.k8s.io/my-app created",
+		"configmap/my-app created",
+		"secret/my-app created",
+		"deployment.apps/my-app created",
+		"service/my-app created",
+	}
+
+	for _, er := range expectResources {
+		// Check result (it should be created/updated/unchanged, etc...)
+		expectedOutput := strings.Contains(stringOutput, er)
+		if !expectedOutput {
+			t.Errorf("Expected substituted output to contain '%s', got %s", er, stringOutput)
+		}
+	}
+
+}
+
+func TestEnvsubstIntegration_NoSubst_MixedManifests(t *testing.T) {
+
+	if os.Getenv(integrationTestEnv) != integrationTestFlag {
+		t.Log("Integration test was skipped due to configuration")
+		return
+	}
+
+	t.Log("running integration test: ", t.Name())
+	printEnvsubstVersionInfo(t)
+
+	namespaceName := "kubectl-envsubst-integration-tests-ns-1"
+	defer cleanupResource(t, "ns", namespaceName)
+
+	// Setup context
+	setContextNs(t, namespaceName)
+	defer setContextNs(t, "default")
+
+	// Run kubectl-envsubst
+
+	cmdEnvsubstApply := exec.Command("kubectl", "envsubst", "apply", "-f", "immutable_data/resolve/plain-combined")
+	output, err := cmdEnvsubstApply.CombinedOutput()
+	stringOutput := string(output)
+	if err != nil {
+		t.Fatalf("Failed to run kubectl envsubst: %v, output: %s", err, stringOutput)
+	}
+	t.Log(stringOutput)
+
+	expectResources := []string{
+		"serviceaccount/my-app created",
+		"role.rbac.authorization.k8s.io/my-app created",
+		"rolebinding.rbac.authorization.k8s.io/my-app created",
+		"configmap/my-app created",
+		"secret/my-app created",
+		"deployment.apps/my-app created",
+		"service/my-app created",
+	}
+
+	for _, er := range expectResources {
+		// Check result (it should be created/updated/unchanged, etc...)
+		expectedOutput := strings.Contains(stringOutput, er)
+		if !expectedOutput {
+			t.Errorf("Expected substituted output to contain '%s', got %s", er, stringOutput)
+		}
+	}
+
+}
+
+func TestEnvsubstIntegration_NoSubst_MixedManifests_MixedFileFormats(t *testing.T) {
+
+	if os.Getenv(integrationTestEnv) != integrationTestFlag {
+		t.Log("Integration test was skipped due to configuration")
+		return
+	}
+
+	t.Log("running integration test: ", t.Name())
+	printEnvsubstVersionInfo(t)
+
+	namespaceName := "kubectl-envsubst-integration-tests-ns-2"
+	defer cleanupResource(t, "ns", namespaceName)
+
+	// Setup context
+	setContextNs(t, namespaceName)
+	defer setContextNs(t, "default")
+
+	// Run kubectl-envsubst
+
+	cmdEnvsubstApply := exec.Command("kubectl", "envsubst", "apply", "-f", "immutable_data/resolve/plain-yaml-json")
+	output, err := cmdEnvsubstApply.CombinedOutput()
+	stringOutput := string(output)
+	if err != nil {
+		t.Fatalf("Failed to run kubectl envsubst: %v, output: %s", err, stringOutput)
+	}
+	t.Log(stringOutput)
+
+	expectResources := []string{
+		"serviceaccount/my-app created",
+		"role.rbac.authorization.k8s.io/my-app created",
+		"rolebinding.rbac.authorization.k8s.io/my-app created",
+		"configmap/my-app created",
+		"secret/my-app created",
+		"deployment.apps/my-app created",
+		"service/my-app created",
+	}
+
+	for _, er := range expectResources {
+		// Check result (it should be created/updated/unchanged, etc...)
+		expectedOutput := strings.Contains(stringOutput, er)
+		if !expectedOutput {
+			t.Errorf("Expected substituted output to contain '%s', got %s", er, stringOutput)
+		}
+	}
+
+}
+
 // helpers
 
 func randomIdent(length int) string {
@@ -312,15 +592,45 @@ func cleanupResource(t *testing.T, kind, name string) {
 	t.Log(string(output))
 }
 
+func createNs(t *testing.T, ns string) {
+	cmd := exec.Command("kubectl", "create", "ns", ns)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(output))
+}
+
+func setContextNs(t *testing.T, ns string) {
+	cmd := exec.Command("kubectl", "config", "set-context", "--current", "--namespace", ns)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(output))
+}
+
+func getEnvsubstPath(t *testing.T) string {
+	path, err := exec.LookPath("kubectl-envsubst")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
 func printEnvsubstVersionInfo(t *testing.T) {
 	cmd := exec.Command("kubectl", "krew", "info", "envsubst")
-	output, _ := cmd.CombinedOutput()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	scanner := bufio.NewScanner(strings.NewReader(string(output)))
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.Contains(line, "VERSION") {
 			t.Logf("*** kubectl-envsubst %s ***", line)
+			t.Logf("*** kubectl-envsubst path: %s ***", getEnvsubstPath(t))
 		}
 	}
 }

@@ -1,0 +1,12 @@
+{
+  "apiVersion": "v1",
+  "kind": "ConfigMap",
+  "metadata": {
+    "name": "my-app",
+    "namespace": "kubectl-envsubst-integration-tests-ns-2"
+  },
+  "data": {
+    "APP_ENV": "production",
+    "APP_DEBUG": "false"
+  }
+}

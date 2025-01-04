@@ -12,70 +12,21 @@ import (
 
 var FileExtensions = []string{".json", ".yaml", ".yml"}
 
-// CmdFlagsProxy holds interested for plugin args
-type CmdFlagsProxy struct {
-	Filenames             []string
-	EnvsubstAllowedVars   []string
-	EnvsubstAllowedPrefix []string
-	Recursive             bool
-	Help                  bool
-	Others                []string
-	HasStdin              bool
-}
-
-func ParseCmdFlags() (*CmdFlagsProxy, error) {
-
-	recognized, err := parseArgs()
-	if err != nil {
-		return nil, err
-	}
-
-	res := &CmdFlagsProxy{
-		Filenames:             []string{},
-		EnvsubstAllowedVars:   recognized.EnvsubstAllowedVars,
-		EnvsubstAllowedPrefix: recognized.EnvsubstAllowedPrefix,
-		Recursive:             recognized.Recursive,
-		Help:                  recognized.Help,
-		Others:                recognized.Others,
-		HasStdin:              recognized.HasStdin,
-	}
-
-	for _, f := range recognized.Filenames {
-		err := resolveSingle(f, res)
+func ResolveAllFiles(filenames []string, recursive bool) ([]string, error) {
+	result := []string{}
+	for _, f := range filenames {
+		files, err := resolveFilenamesForPatterns(f, recursive)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error resolving filenames: %w", err)
 		}
+		result = append(result, files...)
 	}
-
-	return res, nil
+	// Ensure consistent order
+	sort.Strings(result)
+	return result, nil
 }
 
-func resolveSingle(filenameGiven string, res *CmdFlagsProxy) error {
-	if filenameGiven == "" {
-		return fmt.Errorf("flag --filename requires a value")
-	}
-	files, err := resolveFilenames(filenameGiven, res.Recursive)
-	if err != nil {
-		return fmt.Errorf("error resolving filenames: %w", err)
-	}
-	res.Filenames = append(res.Filenames, files...)
-	return nil
-}
-
-func ignoreFile(path string, extensions []string) bool {
-	if len(extensions) == 0 {
-		return false
-	}
-	ext := filepath.Ext(path)
-	for _, s := range extensions {
-		if s == ext {
-			return false
-		}
-	}
-	return true
-}
-
-func resolveFilenames(path string, recursive bool) ([]string, error) {
+func resolveFilenamesForPatterns(path string, recursive bool) ([]string, error) {
 	var results []string
 
 	// Check if the path is a URL
@@ -131,4 +82,17 @@ func resolveFilenames(path string, recursive bool) ([]string, error) {
 func IsURL(s string) bool {
 	u, err := url.Parse(s)
 	return err == nil && u.Scheme != "" && u.Host != ""
+}
+
+func ignoreFile(path string, extensions []string) bool {
+	if len(extensions) == 0 {
+		return false
+	}
+	ext := filepath.Ext(path)
+	for _, s := range extensions {
+		if s == ext {
+			return false
+		}
+	}
+	return true
 }
