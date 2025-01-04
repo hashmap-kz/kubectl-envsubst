@@ -18,7 +18,7 @@ const (
 
 // basic
 
-func TestEnvsubstIntegrationFromFile(t *testing.T) {
+func TestEnvsubstIntegration_SubstApplyFromFile(t *testing.T) {
 
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("integration test was skipped due to configuration")
@@ -70,7 +70,7 @@ func TestEnvsubstIntegrationFromFile(t *testing.T) {
 
 }
 
-func TestEnvsubstIntegrationFromStdin(t *testing.T) {
+func TestEnvsubstIntegration_SubstApplyFromStdin(t *testing.T) {
 
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("integration test was skipped due to configuration")
@@ -147,7 +147,7 @@ spec:
 
 }
 
-func TestEnvsubstIntegrationFromUrl(t *testing.T) {
+func TestEnvsubstIntegration_SubstApplyFromUrl(t *testing.T) {
 
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("Integration test was skipped due to configuration")
@@ -202,7 +202,7 @@ func TestEnvsubstIntegrationFromUrl(t *testing.T) {
 
 // mixed substitution
 
-func TestEnvsubstIntegrationConfigmapMixed(t *testing.T) {
+func TestEnvsubstIntegration_SubstApplyConfigmapMixed(t *testing.T) {
 
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("integration test was skipped due to configuration")
@@ -292,7 +292,7 @@ server {
 	}
 }
 
-func TestEnvsubstIntegrationMixedManifestsCombined(t *testing.T) {
+func TestEnvsubstIntegration_SubstMixedManifestsCombined(t *testing.T) {
 
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("Integration test was skipped due to configuration")
@@ -326,7 +326,7 @@ func TestEnvsubstIntegrationMixedManifestsCombined(t *testing.T) {
 
 	// Run kubectl-envsubst
 
-	cmdEnvsubstApply := exec.Command("kubectl", "envsubst", "apply", "-f", "immutable_data/resolve/combined")
+	cmdEnvsubstApply := exec.Command("kubectl", "envsubst", "apply", "-f", "immutable_data/resolve/subst-combined")
 	output, err := cmdEnvsubstApply.CombinedOutput()
 	stringOutput := string(output)
 	if err != nil {
@@ -354,7 +354,7 @@ func TestEnvsubstIntegrationMixedManifestsCombined(t *testing.T) {
 
 }
 
-func TestEnvsubstIntegrationMixedManifestsSeparated(t *testing.T) {
+func TestEnvsubstIntegration_SubstMixedManifestsSeparated(t *testing.T) {
 
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("Integration test was skipped due to configuration")
@@ -388,7 +388,7 @@ func TestEnvsubstIntegrationMixedManifestsSeparated(t *testing.T) {
 
 	// Run kubectl-envsubst
 
-	cmdEnvsubstApply := exec.Command("kubectl", "envsubst", "apply", "-f", "immutable_data/resolve/separated")
+	cmdEnvsubstApply := exec.Command("kubectl", "envsubst", "apply", "-f", "immutable_data/resolve/subst-separated")
 	output, err := cmdEnvsubstApply.CombinedOutput()
 	stringOutput := string(output)
 	if err != nil {
@@ -416,7 +416,7 @@ func TestEnvsubstIntegrationMixedManifestsSeparated(t *testing.T) {
 
 }
 
-func TestEnvsubstIntegration_MixedManifests_MixedExtensions_MixedFileFormats(t *testing.T) {
+func TestEnvsubstIntegration_Subst_MixedManifests_MixedExtensions_MixedFileFormats(t *testing.T) {
 
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("Integration test was skipped due to configuration")
@@ -450,7 +450,7 @@ func TestEnvsubstIntegration_MixedManifests_MixedExtensions_MixedFileFormats(t *
 
 	// Run kubectl-envsubst
 
-	cmdEnvsubstApply := exec.Command("kubectl", "envsubst", "apply", "-f", "immutable_data/resolve/yaml-json")
+	cmdEnvsubstApply := exec.Command("kubectl", "envsubst", "apply", "-f", "immutable_data/resolve/subst-yaml-json")
 	output, err := cmdEnvsubstApply.CombinedOutput()
 	stringOutput := string(output)
 	if err != nil {
@@ -478,7 +478,7 @@ func TestEnvsubstIntegration_MixedManifests_MixedExtensions_MixedFileFormats(t *
 
 }
 
-func TestEnvsubstIntegration_MixedManifests_NoSubstitutions(t *testing.T) {
+func TestEnvsubstIntegration_NoSubst_MixedManifests(t *testing.T) {
 
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("Integration test was skipped due to configuration")
@@ -497,7 +497,7 @@ func TestEnvsubstIntegration_MixedManifests_NoSubstitutions(t *testing.T) {
 
 	// Run kubectl-envsubst
 
-	cmdEnvsubstApply := exec.Command("kubectl", "envsubst", "apply", "-f", "immutable_data/resolve/plain")
+	cmdEnvsubstApply := exec.Command("kubectl", "envsubst", "apply", "-f", "immutable_data/resolve/plain-combined")
 	output, err := cmdEnvsubstApply.CombinedOutput()
 	stringOutput := string(output)
 	if err != nil {
@@ -525,7 +525,7 @@ func TestEnvsubstIntegration_MixedManifests_NoSubstitutions(t *testing.T) {
 
 }
 
-func TestEnvsubstIntegration_MixedManifests_NoSubstitutions_MixedFileFormats(t *testing.T) {
+func TestEnvsubstIntegration_NoSubst_MixedManifests_MixedFileFormats(t *testing.T) {
 
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("Integration test was skipped due to configuration")
@@ -544,7 +544,7 @@ func TestEnvsubstIntegration_MixedManifests_NoSubstitutions_MixedFileFormats(t *
 
 	// Run kubectl-envsubst
 
-	cmdEnvsubstApply := exec.Command("kubectl", "envsubst", "apply", "-f", "immutable_data/resolve/yaml-json-plain")
+	cmdEnvsubstApply := exec.Command("kubectl", "envsubst", "apply", "-f", "immutable_data/resolve/plain-yaml-json")
 	output, err := cmdEnvsubstApply.CombinedOutput()
 	stringOutput := string(output)
 	if err != nil {
