@@ -15,3 +15,6 @@ echo "*** url **"
 
 echo "*** mixed-single **"
 . 05-apply-mix.sh
+
+echo "*** cleanup **"
+kubectl delete ns "kubectl-envsubst-tests-6bf80e57-f7ba-4cab-9502-105cf669820b" --ignore-not-found

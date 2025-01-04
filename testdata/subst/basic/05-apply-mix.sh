@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # include env-vars
-export APP_NAMESPACE='kubectl-envsubst-tmpns-testmix'
+export APP_NAMESPACE='kubectl-envsubst-tests-6bf80e57-f7ba-4cab-9502-105cf669820b'
 export APP_NAME=my-app
 export IMAGE_NAME=nginx
 export IMAGE_TAG=latest

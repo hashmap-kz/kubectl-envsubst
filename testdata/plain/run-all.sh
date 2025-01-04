@@ -9,3 +9,6 @@ echo "*** directory **"
 
 echo "*** globbing **"
 . 03-apply-glob.sh
+
+echo "*** cleanup **"
+kubectl delete -f manifests/ --recursive
