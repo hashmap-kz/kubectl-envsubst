@@ -1,9 +1,0 @@
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: test-config
-data:
-  file.cfg: |-
-    [core]
-    executor = LocalExecutor
