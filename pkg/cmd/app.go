@@ -12,7 +12,7 @@ import (
 func RunApp() error {
 
 	// parse all passed cmd arguments without any modification
-	flags, err := ParseArgs()
+	flags, err := parseArgs()
 	if err != nil {
 		return err
 	}

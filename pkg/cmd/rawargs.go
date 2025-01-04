@@ -33,7 +33,7 @@ func allEmpty(where []string) bool {
 	return true
 }
 
-func ParseArgs() (CmdArgsRawRecognized, error) {
+func parseArgs() (CmdArgsRawRecognized, error) {
 	args := os.Args[1:] // Skip the program name
 	var result CmdArgsRawRecognized
 
