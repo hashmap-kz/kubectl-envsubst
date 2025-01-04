@@ -28,3 +28,4 @@ avatars/
 backups/
 cover.out
 coverage.txt
+kubectl-envsubst

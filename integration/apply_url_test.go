@@ -15,7 +15,6 @@ func TestEnvsubstIntegration_SubstApplyFromUrl(t *testing.T) {
 		return
 	}
 
-	t.Log("running integration test: ", t.Name())
 	printEnvsubstVersionInfo(t)
 
 	const url = "https://raw.githubusercontent.com/hashmap-kz/kubectl-envsubst/refs/heads/master/integration/immutable_data/01_deployment.yaml"

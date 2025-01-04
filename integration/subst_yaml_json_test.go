@@ -14,7 +14,6 @@ func TestEnvsubstIntegration_Subst_MixedManifests_MixedExtensions_MixedFileForma
 		return
 	}
 
-	t.Log("running integration test: ", t.Name())
 	printEnvsubstVersionInfo(t)
 
 	namespaceName := randomIdent(32)

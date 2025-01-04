@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"math/rand"
+	"os"
 	"os/exec"
 	"strings"
 	"testing"
@@ -85,4 +86,34 @@ func printEnvsubstVersionInfo(t *testing.T) {
 		}
 	}
 
+}
+
+func getDeploymentImageName(t *testing.T, deploymentName string) string {
+	args := strings.Split(fmt.Sprintf("get deployment %s -ojsonpath={.spec.template.spec.containers[0].image}", deploymentName), " ")
+	cmdEnvsubstApply := exec.Command("kubectl", args...)
+	output, err := cmdEnvsubstApply.CombinedOutput()
+	stringOutput := string(output)
+	if err != nil {
+		t.Fatalf("Failed to get image name: %v, odeployment: %s", err, deploymentName)
+	}
+	return strings.TrimSpace(stringOutput)
+}
+
+func createTempFile(t *testing.T, content string, extension string) (string, error) {
+
+	tempFile, err := os.CreateTemp("", "kubectl-envsubst-tmp-*."+extension)
+	if err != nil {
+		return "", fmt.Errorf("failed to create temp file: %w", err)
+	}
+
+	if _, err := tempFile.WriteString(content); err != nil {
+		tempFile.Close()
+		return "", fmt.Errorf("failed to write to temp file: %w", err)
+	}
+
+	if err := tempFile.Close(); err != nil {
+		return "", fmt.Errorf("failed to close temp file: %w", err)
+	}
+
+	return tempFile.Name(), nil
 }

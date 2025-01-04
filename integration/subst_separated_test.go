@@ -7,14 +7,13 @@ import (
 	"testing"
 )
 
-func TestEnvsubstIntegration_SubstMixedManifestsCombined(t *testing.T) {
+func TestEnvsubstIntegration_SubstMixedManifestsSeparated(t *testing.T) {
 
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("integration test was skipped due to configuration")
 		return
 	}
 
-	t.Log("running integration test: ", t.Name())
 	printEnvsubstVersionInfo(t)
 
 	namespaceName := randomIdent(32)
@@ -39,7 +38,7 @@ func TestEnvsubstIntegration_SubstMixedManifestsCombined(t *testing.T) {
 
 	// Run kubectl-envsubst
 
-	cmdEnvsubstApply := exec.Command("kubectl", "envsubst", "apply", "-f", "immutable_data/resolve/subst-combined")
+	cmdEnvsubstApply := exec.Command("kubectl", "envsubst", "apply", "-f", "immutable_data/resolve/subst-separated")
 	output, err := cmdEnvsubstApply.CombinedOutput()
 	stringOutput := string(output)
 	if err != nil {

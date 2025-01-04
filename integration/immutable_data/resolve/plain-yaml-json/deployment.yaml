@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: my-app
-  namespace: kubectl-envsubst-8e4eeb15301847f5b51a24cc595b5f87
+  namespace: kubectl-envsubst-plain-yaml-json
 spec:
   replicas: 3
   selector:

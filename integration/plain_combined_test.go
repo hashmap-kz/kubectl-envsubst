@@ -14,10 +14,9 @@ func TestEnvsubstIntegration_NoSubst_MixedManifests(t *testing.T) {
 		return
 	}
 
-	t.Log("running integration test: ", t.Name())
 	printEnvsubstVersionInfo(t)
 
-	namespaceName := "kubectl-envsubst-8e4eeb15301847f5b51a24cc595b5f87"
+	namespaceName := "kubectl-envsubst-plain-combined"
 	createNs(t, namespaceName)
 
 	// Setup context
