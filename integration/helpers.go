@@ -70,18 +70,19 @@ func getEnvsubstPath(t *testing.T) string {
 }
 
 func printEnvsubstVersionInfo(t *testing.T) {
+	t.Logf("*** kubectl-envsubst path: %s ***", getEnvsubstPath(t))
+
 	cmd := exec.Command("kubectl", "krew", "info", "envsubst")
 	output, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	scanner := bufio.NewScanner(strings.NewReader(string(output)))
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.Contains(line, "VERSION") {
-			t.Logf("*** kubectl-envsubst %s ***", line)
-			t.Logf("*** kubectl-envsubst path: %s ***", getEnvsubstPath(t))
+	// NOTE: '== nil'; in ci-jobs we're testing with 'make install'
+	if err == nil {
+		scanner := bufio.NewScanner(strings.NewReader(string(output)))
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.Contains(line, "VERSION") {
+				t.Logf("*** kubectl-envsubst %s ***", line)
+			}
 		}
 	}
+
 }
