@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "*****"
+echo "*** recursive **"
 . 01-apply-recursive.sh
 
-echo "*****"
+echo "*** directory **"
 . 02-apply-dir.sh
 
-echo "*****"
+echo "*** globbing **"
 . 03-apply-glob.sh

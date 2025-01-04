@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "*****"
+echo "*** cli-args **"
 . 01-apply-cli-args.sh
 
-echo "*****"
+echo "*** env-args **"
 . 02-apply-env-args.sh
 
-echo "*****"
+echo "*** stdin **"
 . 03-apply-stdin.sh
 
-echo "*****"
+echo "*** url **"
 . 04-apply-url.sh
+
+echo "*** mixed-single **"
+. 05-apply-mix.sh

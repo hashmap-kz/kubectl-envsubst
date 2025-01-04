@@ -312,6 +312,11 @@ func cleanupResource(t *testing.T, kind, name string) {
 	t.Log(string(output))
 }
 
+func getEnvsubstPath() string {
+	path, _ := exec.LookPath("kubectl-envsubst")
+	return path
+}
+
 func printEnvsubstVersionInfo(t *testing.T) {
 	cmd := exec.Command("kubectl", "krew", "info", "envsubst")
 	output, _ := cmd.CombinedOutput()
@@ -321,6 +326,7 @@ func printEnvsubstVersionInfo(t *testing.T) {
 		line := scanner.Text()
 		if strings.Contains(line, "VERSION") {
 			t.Logf("*** kubectl-envsubst %s ***", line)
+			t.Logf("*** kubectl-envsubst path: %s ***", getEnvsubstPath())
 		}
 	}
 }
