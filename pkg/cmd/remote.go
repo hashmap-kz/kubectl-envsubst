@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func readRemoteFileContent(url string) ([]byte, error) {
+func ReadRemoteFileContent(url string) ([]byte, error) {
 
 	// Make the HTTP GET request
 	response, err := http.Get(url)

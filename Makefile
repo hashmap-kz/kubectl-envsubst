@@ -3,6 +3,7 @@ SOURCES := $(shell find . -name '*.go')
 BINARY := kubectl-envsubst
 COV_REPORT := coverage.txt
 TEST_FLAGS := -v -race -timeout 30s
+KIND_CLUSTER_NAME := kubectl-envsubst
 
 # Default target
 .PHONY: all
@@ -21,13 +22,33 @@ test:
 # Run tests with coverage
 .PHONY: test-cov
 test-cov:
-	go test -coverprofile=$(COV_REPORT) ./...
+	go test -coverprofile=$(COV_REPORT) -coverpkg=./pkg/...,!./integration/... ./...
 	go tool cover -html=$(COV_REPORT)
+
+# Setup kind-cluster (for running integration tests in a sandbox)
+.PHONY: kind-setup
+kind-setup:
+	kind create cluster --name $(KIND_CLUSTER_NAME)
+	kubectl config set-context kind-$(KIND_CLUSTER_NAME)
+
+# Cleanup kind-cluster
+.PHONY: kind-teardown
+kind-teardown:
+	kind delete clusters $(KIND_CLUSTER_NAME)
 
 # Run integration tests
 .PHONY: test-integration
 test-integration:
+	$(MAKE) kind-setup
 	KUBECTL_ENVSUBST_INTEGRATION_TESTS_AVAILABLE=0xcafebabe go test -v integration/*.go
+	$(MAKE) kind-teardown
+
+# Run integration tests for the 'main' function
+.PHONY: test-integration-cmd
+test-integration-cmd:
+	$(MAKE) kind-setup
+	KUBECTL_ENVSUBST_INTEGRATION_TESTS_AVAILABLE=0xcafebabe go test -v cmd/*.go
+	$(MAKE) kind-teardown
 
 # Lint the code
 .PHONY: lint

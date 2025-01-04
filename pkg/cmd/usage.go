@@ -1,11 +1,8 @@
 package cmd
 
-import (
-	"strings"
-)
+import "strings"
 
-func UsageMessage() string {
-	var usageRaw = `
+var UsageMessage = strings.TrimSpace(`
 Expands environment variables in manifests, before applying them
 
 Usage:
@@ -30,7 +27,4 @@ Flags:
   --envsubst-allowed-prefixes
       Accepts a comma-separated list of prefixes. 
       Only variables with names starting with one of these prefixes will be substituted; others will be ignored.
-`
-
-	return strings.TrimSpace(usageRaw)
-}
+`)
