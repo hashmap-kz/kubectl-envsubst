@@ -15,7 +15,6 @@ func TestEnvsubstIntegration_SubstApplyFromStdin(t *testing.T) {
 		return
 	}
 
-	t.Log("running integration test: ", t.Name())
 	printEnvsubstVersionInfo(t)
 
 	resourceName := randomIdent(32)

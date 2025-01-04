@@ -1,7 +1,0 @@
-{
-  "apiVersion": "v1",
-  "kind": "Namespace",
-  "metadata": {
-    "name": "kubectl-envsubst-8e4eeb15301847f5b51a24cc595b5f87"
-  }
-}

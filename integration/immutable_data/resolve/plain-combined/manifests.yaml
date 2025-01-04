@@ -2,20 +2,20 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: kubectl-envsubst-8e4eeb15301847f5b51a24cc595b5f87
+  name: kubectl-envsubst-plain-combined
 
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: my-app
-  namespace: kubectl-envsubst-8e4eeb15301847f5b51a24cc595b5f87
+  namespace: kubectl-envsubst-plain-combined
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  namespace: kubectl-envsubst-8e4eeb15301847f5b51a24cc595b5f87
+  namespace: kubectl-envsubst-plain-combined
   name: my-app
 rules:
   - apiGroups: [""]
@@ -30,7 +30,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: my-app
-  namespace: kubectl-envsubst-8e4eeb15301847f5b51a24cc595b5f87
+  namespace: kubectl-envsubst-plain-combined
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -38,14 +38,14 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: my-app
-    namespace: kubectl-envsubst-8e4eeb15301847f5b51a24cc595b5f87
+    namespace: kubectl-envsubst-plain-combined
 
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: my-app
-  namespace: kubectl-envsubst-8e4eeb15301847f5b51a24cc595b5f87
+  namespace: kubectl-envsubst-plain-combined
 data:
   APP_ENV: "production"
   APP_DEBUG: "false"
@@ -55,7 +55,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: my-app
-  namespace: kubectl-envsubst-8e4eeb15301847f5b51a24cc595b5f87
+  namespace: kubectl-envsubst-plain-combined
 type: Opaque
 data:
   username: bXktYXBwLXVzZXI=
@@ -66,7 +66,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: my-app
-  namespace: kubectl-envsubst-8e4eeb15301847f5b51a24cc595b5f87
+  namespace: kubectl-envsubst-plain-combined
 spec:
   replicas: 3
   selector:
@@ -94,7 +94,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: my-app
-  namespace: kubectl-envsubst-8e4eeb15301847f5b51a24cc595b5f87
+  namespace: kubectl-envsubst-plain-combined
 spec:
   selector:
     app: my-app

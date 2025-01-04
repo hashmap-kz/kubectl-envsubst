@@ -14,10 +14,9 @@ func TestEnvsubstIntegration_NoSubst_MixedManifests_MixedFileFormats(t *testing.
 		return
 	}
 
-	t.Log("running integration test: ", t.Name())
 	printEnvsubstVersionInfo(t)
 
-	namespaceName := "kubectl-envsubst-8e4eeb15301847f5b51a24cc595b5f87"
+	namespaceName := "kubectl-envsubst-plain-yaml-json"
 	createNs(t, namespaceName)
 
 	// Setup context

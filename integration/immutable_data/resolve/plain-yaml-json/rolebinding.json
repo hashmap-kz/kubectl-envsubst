@@ -3,7 +3,7 @@
   "kind": "RoleBinding",
   "metadata": {
     "name": "my-app",
-    "namespace": "kubectl-envsubst-8e4eeb15301847f5b51a24cc595b5f87"
+    "namespace": "kubectl-envsubst-plain-yaml-json"
   },
   "roleRef": {
     "apiGroup": "rbac.authorization.k8s.io",
@@ -14,7 +14,7 @@
     {
       "kind": "ServiceAccount",
       "name": "my-app",
-      "namespace": "kubectl-envsubst-8e4eeb15301847f5b51a24cc595b5f87"
+      "namespace": "kubectl-envsubst-plain-yaml-json"
     }
   ]
 }

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"math/rand"
+	"os"
 	"os/exec"
 	"strings"
 	"testing"
@@ -85,4 +86,23 @@ func printEnvsubstVersionInfo(t *testing.T) {
 		}
 	}
 
+}
+
+func createTempFile(content string, extension string) (string, error) {
+
+	tempFile, err := os.CreateTemp("", "kubectl-envsubst-tmp-*."+extension)
+	if err != nil {
+		return "", fmt.Errorf("failed to create temp file: %w", err)
+	}
+
+	if _, err := tempFile.WriteString(content); err != nil {
+		tempFile.Close()
+		return "", fmt.Errorf("failed to write to temp file: %w", err)
+	}
+
+	if err := tempFile.Close(); err != nil {
+		return "", fmt.Errorf("failed to close temp file: %w", err)
+	}
+
+	return tempFile.Name(), nil
 }
