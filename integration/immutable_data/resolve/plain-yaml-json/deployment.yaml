@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: my-app
-  namespace: kubectl-envsubst-integration-tests-ns-2
+  namespace: kubectl-envsubst-integration-tests-ns-1
 spec:
   replicas: 3
   selector:

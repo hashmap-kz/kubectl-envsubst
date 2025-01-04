@@ -3,7 +3,7 @@
   "kind": "ConfigMap",
   "metadata": {
     "name": "my-app",
-    "namespace": "kubectl-envsubst-integration-tests-ns-2"
+    "namespace": "kubectl-envsubst-integration-tests-ns-1"
   },
   "data": {
     "APP_ENV": "production",
