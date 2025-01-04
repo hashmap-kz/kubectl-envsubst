@@ -19,13 +19,13 @@ func RunApp() error {
 
 	// either help message, either 'apply' was not provided
 	if flags.Help || len(flags.Others) == 0 {
-		fmt.Println(UsageMessage())
+		fmt.Println(UsageMessage)
 		return nil
 	}
 
 	// support apply operation only
 	if flags.Others[0] != "apply" {
-		fmt.Println(UsageMessage())
+		fmt.Println(UsageMessage)
 		return nil
 	}
 
