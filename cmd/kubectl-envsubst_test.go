@@ -102,4 +102,5 @@ data:
 		t.Errorf("expected 'configmap/cm-c4a3d54857ef43398b9a557050a7c83c', got: %s", strOut)
 	}
 
+	t.Log(strOut)
 }

@@ -36,10 +36,19 @@ kind-setup:
 kind-teardown:
 	kind delete clusters $(KIND_CLUSTER_NAME)
 
-# Run integration tests (TODO: setup/teardown: $(MAKE) kind-teardown)
+# Run integration tests
 .PHONY: test-integration
-test-integration: kind-setup
-	KUBECTL_ENVSUBST_INTEGRATION_TESTS_AVAILABLE=0xcafebabe go test -v integration/*.go cmd/*.go
+test-integration:
+	$(MAKE) kind-setup
+	KUBECTL_ENVSUBST_INTEGRATION_TESTS_AVAILABLE=0xcafebabe go test -v integration/*.go
+	$(MAKE) kind-teardown
+
+# Run integration tests for the 'main' function
+.PHONY: test-integration-cmd
+test-integration-cmd:
+	$(MAKE) kind-setup
+	KUBECTL_ENVSUBST_INTEGRATION_TESTS_AVAILABLE=0xcafebabe go test -v cmd/*.go
+	$(MAKE) kind-teardown
 
 # Lint the code
 .PHONY: lint
