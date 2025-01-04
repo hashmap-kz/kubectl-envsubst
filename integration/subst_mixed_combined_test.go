@@ -9,6 +9,11 @@ import (
 
 func TestEnvsubstIntegration_SubstMixedManifestsCombined(t *testing.T) {
 
+	if os.Getenv(integrationTestEnv) != integrationTestFlag {
+		t.Log("integration test was skipped due to configuration")
+		return
+	}
+
 	t.Log("running integration test: ", t.Name())
 	printEnvsubstVersionInfo(t)
 
