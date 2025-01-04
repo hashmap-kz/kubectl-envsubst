@@ -185,7 +185,7 @@ func TestParseArgs(t *testing.T) {
 			osArgs := append([]string{"program"}, tc.args...)
 			os.Args = osArgs
 
-			result, err := parseArgs()
+			result, err := ParseArgs()
 
 			if (err != nil) != tc.expectedError {
 				t.Errorf("expected error: %v, got: %v", tc.expectedError, err)
@@ -205,7 +205,7 @@ func TestParseArgs_EnvFallback(t *testing.T) {
 	defer os.Unsetenv("ENVSUBST_ALLOWED_PREFIXES")
 
 	os.Args = []string{"cmd"}
-	result, err := parseArgs()
+	result, err := ParseArgs()
 
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
@@ -245,7 +245,7 @@ func TestParseArgs_CmdAndEnvFlags(t *testing.T) {
 		"--envsubst-allowed-prefixes=CMD_",
 	}
 
-	result, err := parseArgs()
+	result, err := ParseArgs()
 
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
@@ -282,7 +282,7 @@ func TestParseArgs_EmptyEnvVars(t *testing.T) {
 	defer os.Unsetenv("ENVSUBST_ALLOWED_PREFIXES")
 
 	os.Args = []string{"cmd"}
-	_, err := parseArgs()
+	_, err := ParseArgs()
 
 	// Expect an error due to empty environment variables
 	if err == nil {
@@ -299,7 +299,7 @@ func TestParseArgs_EmptyEnvVars(t *testing.T) {
 
 func TestParseArgs_SingleStdin(t *testing.T) {
 	os.Args = []string{"cmd", "--filename", "-"}
-	result, err := parseArgs()
+	result, err := ParseArgs()
 
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
@@ -316,7 +316,7 @@ func TestParseArgs_SingleStdin(t *testing.T) {
 
 func TestParseArgs_MultipleStdin(t *testing.T) {
 	os.Args = []string{"cmd", "--filename", "-", "-f", "-"}
-	_, err := parseArgs()
+	_, err := ParseArgs()
 
 	if err == nil {
 		t.Fatal("Expected an error for multiple stdin redirection, but got none")
@@ -330,7 +330,7 @@ func TestParseArgs_MultipleStdin(t *testing.T) {
 
 func TestParseArgs_EmptyFilename(t *testing.T) {
 	os.Args = []string{"cmd", "--filename="}
-	_, err := parseArgs()
+	_, err := ParseArgs()
 
 	if err == nil {
 		t.Fatal("Expected an error for empty filename, but got none")
@@ -344,7 +344,7 @@ func TestParseArgs_EmptyFilename(t *testing.T) {
 
 func TestParseArgs_FilenamesProvided(t *testing.T) {
 	os.Args = []string{"cmd", "--filename=pod.yaml", "-f=config.yaml", "--filename", "app.yaml"}
-	result, err := parseArgs()
+	result, err := ParseArgs()
 
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
@@ -363,7 +363,7 @@ func TestParseArgs_FilenamesProvided(t *testing.T) {
 
 func TestParseArgs_NoFilenames(t *testing.T) {
 	os.Args = []string{"cmd"}
-	result, err := parseArgs()
+	result, err := ParseArgs()
 
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
@@ -379,7 +379,7 @@ func TestParseArgs_NoFilenames(t *testing.T) {
 
 func TestParseArgs_StdinAndFile(t *testing.T) {
 	os.Args = []string{"cmd", "--filename=-", "-f=pod.yaml"}
-	result, err := parseArgs()
+	result, err := ParseArgs()
 
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
