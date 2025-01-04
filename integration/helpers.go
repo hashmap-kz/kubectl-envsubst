@@ -88,7 +88,18 @@ func printEnvsubstVersionInfo(t *testing.T) {
 
 }
 
-func createTempFile(content string, extension string) (string, error) {
+func getDeploymentImageName(t *testing.T, deploymentName string) string {
+	args := strings.Split(fmt.Sprintf("get deployment %s -ojsonpath={.spec.template.spec.containers[0].image}", deploymentName), " ")
+	cmdEnvsubstApply := exec.Command("kubectl", args...)
+	output, err := cmdEnvsubstApply.CombinedOutput()
+	stringOutput := string(output)
+	if err != nil {
+		t.Fatalf("Failed to get image name: %v, odeployment: %s", err, deploymentName)
+	}
+	return strings.TrimSpace(stringOutput)
+}
+
+func createTempFile(t *testing.T, content string, extension string) (string, error) {
 
 	tempFile, err := os.CreateTemp("", "kubectl-envsubst-tmp-*."+extension)
 	if err != nil {
