@@ -9,13 +9,6 @@ import (
 	"time"
 )
 
-const (
-	integrationTestEnv  = "KUBECTL_ENVSUBST_INTEGRATION_TESTS_AVAILABLE"
-	integrationTestFlag = "0xcafebabe"
-)
-
-// helpers
-
 func randomIdent(length int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))

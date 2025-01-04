@@ -39,7 +39,7 @@ kind-teardown:
 # Run integration tests (TODO: setup/teardown: $(MAKE) kind-teardown)
 .PHONY: test-integration
 test-integration: kind-setup
-	KUBECTL_ENVSUBST_INTEGRATION_TESTS_AVAILABLE=0xcafebabe go test -v integration/*.go
+	go test -v integration/*.go
 
 # Lint the code
 .PHONY: lint
