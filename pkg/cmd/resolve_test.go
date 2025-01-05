@@ -54,13 +54,6 @@ func TestResolveFilenames2(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name:        "Single file invalid extension",
-			path:        testFile1,
-			recursive:   false,
-			expected:    nil,
-			expectError: false,
-		},
-		{
 			name:        "Glob pattern valid extensions",
 			path:        filepath.Join(tempDir, "*.yaml"),
 			recursive:   false,
@@ -224,10 +217,10 @@ func TestResolveAllFiles(t *testing.T) {
 			wantErr:   false,
 		},
 		{
-			name:      "Ignore unsupported file extension",
+			name:      "If file passed explicitly, don't check its extension",
 			filenames: []string{file3},
 			recursive: false,
-			want:      []string{},
+			want:      []string{file3},
 			wantErr:   false,
 		},
 		{

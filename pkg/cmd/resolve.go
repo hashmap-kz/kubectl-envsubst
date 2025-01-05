@@ -68,9 +68,8 @@ func resolveFilenamesForPatterns(path string, recursive bool) ([]string, error) 
 				return nil, fmt.Errorf("error walking directory: %w", err)
 			}
 		} else {
-			if !ignoreFile(filepath.Clean(path), FileExtensions) {
-				results = append(results, filepath.Clean(path))
-			}
+			// Only apply the extension filter to files in directories; ignore it for directly specified files.
+			results = append(results, filepath.Clean(path))
 		}
 	}
 
