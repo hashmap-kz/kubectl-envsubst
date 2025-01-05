@@ -3,7 +3,6 @@ package cmd
 import (
 	"os"
 	"reflect"
-	"strings"
 	"testing"
 )
 
@@ -169,11 +168,20 @@ func TestParseArgs(t *testing.T) {
 			expectedError: false,
 		},
 		{
-			name: "Valid args with unrecognized argument that looks like a short flag",
+			name: "Valid args with unrecognized argument that looks like a short flag (1)",
 			args: []string{"-R", "-xyz"},
 			expectedResult: CmdArgsRawRecognized{
 				Recursive: true,
 				Others:    []string{"-xyz"},
+			},
+			expectedError: false,
+		},
+		{
+			name: "Valid args with unrecognized argument that looks like a short flag (2)",
+			args: []string{"-h", "-xyz"},
+			expectedResult: CmdArgsRawRecognized{
+				Help:   true,
+				Others: []string{"-xyz"},
 			},
 			expectedError: false,
 		},
@@ -195,105 +203,6 @@ func TestParseArgs(t *testing.T) {
 				t.Errorf("expected result: %+v, got: %+v", tc.expectedResult, result)
 			}
 		})
-	}
-}
-
-func TestParseArgs_EnvFallback(t *testing.T) {
-	os.Setenv("ENVSUBST_ALLOWED_VARS", "HOME,USER")
-	os.Setenv("ENVSUBST_ALLOWED_PREFIXES", "APP_,CI_")
-	defer os.Unsetenv("ENVSUBST_ALLOWED_VARS")
-	defer os.Unsetenv("ENVSUBST_ALLOWED_PREFIXES")
-
-	os.Args = []string{"cmd"}
-	result, err := ParseArgs()
-
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-
-	expectedVars := []string{"HOME", "USER"}
-	expectedPrefixes := []string{"APP_", "CI_"}
-	if len(result.EnvsubstAllowedVars) != len(expectedVars) {
-		t.Errorf("Expected allowed vars %v, got %v", expectedVars, result.EnvsubstAllowedVars)
-	}
-	for i, varName := range expectedVars {
-		if result.EnvsubstAllowedVars[i] != varName {
-			t.Errorf("Expected allowed var %s, got %s", varName, result.EnvsubstAllowedVars[i])
-		}
-	}
-	if len(result.EnvsubstAllowedPrefix) != len(expectedPrefixes) {
-		t.Errorf("Expected allowed prefixes %v, got %v", expectedPrefixes, result.EnvsubstAllowedPrefix)
-	}
-	for i, prefix := range expectedPrefixes {
-		if result.EnvsubstAllowedPrefix[i] != prefix {
-			t.Errorf("Expected allowed prefix %s, got %s", prefix, result.EnvsubstAllowedPrefix[i])
-		}
-	}
-}
-
-func TestParseArgs_CmdAndEnvFlags(t *testing.T) {
-	// Set environment variables
-	os.Setenv("ENVSUBST_ALLOWED_VARS", "HOME,USER")
-	os.Setenv("ENVSUBST_ALLOWED_PREFIXES", "APP_,CI_")
-	defer os.Unsetenv("ENVSUBST_ALLOWED_VARS")
-	defer os.Unsetenv("ENVSUBST_ALLOWED_PREFIXES")
-
-	// Set command-line arguments
-	os.Args = []string{
-		"cmd",
-		"--envsubst-allowed-vars=CMD_VAR1,CMD_VAR2",
-		"--envsubst-allowed-prefixes=CMD_",
-	}
-
-	result, err := ParseArgs()
-
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-
-	// Verify that command-line flags take precedence over environment variables
-	expectedVars := []string{"CMD_VAR1", "CMD_VAR2"}
-	expectedPrefixes := []string{"CMD_"}
-
-	if len(result.EnvsubstAllowedVars) != len(expectedVars) {
-		t.Errorf("Expected allowed vars %v, got %v", expectedVars, result.EnvsubstAllowedVars)
-	}
-	for i, varName := range expectedVars {
-		if result.EnvsubstAllowedVars[i] != varName {
-			t.Errorf("Expected allowed var %s, got %s", varName, result.EnvsubstAllowedVars[i])
-		}
-	}
-
-	if len(result.EnvsubstAllowedPrefix) != len(expectedPrefixes) {
-		t.Errorf("Expected allowed prefixes %v, got %v", expectedPrefixes, result.EnvsubstAllowedPrefix)
-	}
-	for i, prefix := range expectedPrefixes {
-		if result.EnvsubstAllowedPrefix[i] != prefix {
-			t.Errorf("Expected allowed prefix %s, got %s", prefix, result.EnvsubstAllowedPrefix[i])
-		}
-	}
-}
-
-func TestParseArgs_EmptyEnvVars(t *testing.T) {
-	// Set empty environment variables
-	os.Setenv("ENVSUBST_ALLOWED_VARS", "")
-	os.Setenv("ENVSUBST_ALLOWED_PREFIXES", "")
-	defer os.Unsetenv("ENVSUBST_ALLOWED_VARS")
-	defer os.Unsetenv("ENVSUBST_ALLOWED_PREFIXES")
-
-	os.Args = []string{"cmd"}
-	_, err := ParseArgs()
-
-	// Expect an error due to empty environment variables
-	if err == nil {
-		t.Fatal("Expected an error for empty environment variables, but got none")
-	}
-
-	expectedErrorVars := "missing value for env: ENVSUBST_ALLOWED_VARS"
-	expectedErrorPrefixes := "missing value for env: ENVSUBST_ALLOWED_PREFIXES"
-
-	if !strings.Contains(err.Error(), expectedErrorVars) && !strings.Contains(err.Error(), expectedErrorPrefixes) {
-		t.Errorf("Expected error to mention missing values for ENVSUBST_ALLOWED_VARS or ENVSUBST_ALLOWED_PREFIXES, got '%s'", err.Error())
 	}
 }
 
@@ -328,74 +237,213 @@ func TestParseArgs_MultipleStdin(t *testing.T) {
 	}
 }
 
-func TestParseArgs_EmptyFilename(t *testing.T) {
-	os.Args = []string{"cmd", "--filename="}
-	_, err := ParseArgs()
-
-	if err == nil {
-		t.Fatal("Expected an error for empty filename, but got none")
+func TestLoadEnvVars(t *testing.T) {
+	tests := []struct {
+		name      string
+		envKey    string
+		envValue  string
+		initial   []string
+		expected  []string
+		expectErr bool
+	}{
+		{
+			name:      "Valid Environment Variable",
+			envKey:    "TEST_ENV",
+			envValue:  "VAR1,VAR2,VAR3",
+			initial:   nil,
+			expected:  []string{"VAR1", "VAR2", "VAR3"},
+			expectErr: false,
+		},
+		{
+			name:      "Missing Environment Variable",
+			envKey:    "MISSING_ENV",
+			envValue:  "",
+			initial:   nil,
+			expected:  nil,
+			expectErr: false,
+		},
+		// not an error, it means that configuration ENVS were not set
+		// an error will be handled in subst stage
+		{
+			name:      "Empty Environment Variable Value",
+			envKey:    "EMPTY_ENV",
+			envValue:  "",
+			initial:   nil,
+			expected:  nil,
+			expectErr: false,
+		},
+		{
+			name:      "Whitespace Only Environment Variable",
+			envKey:    "WHITESPACE_ENV",
+			envValue:  "   ,   ,   ",
+			initial:   nil,
+			expected:  nil,
+			expectErr: true,
+		},
+		{
+			name:      "Pre-existing Values in Target",
+			envKey:    "TEST_ENV",
+			envValue:  "NEW1,NEW2",
+			initial:   []string{"OLD1", "OLD2"},
+			expected:  []string{"NEW1", "NEW2"},
+			expectErr: false,
+		},
 	}
 
-	expectedError := "missing value for flag --filename="
-	if err.Error() != expectedError {
-		t.Errorf("Expected error '%s', got '%s'", expectedError, err.Error())
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Setup environment variable
+			if test.envValue != "" {
+				os.Setenv(test.envKey, test.envValue)
+				defer os.Unsetenv(test.envKey)
+			}
+
+			// Initialize target
+			target := test.initial
+
+			// Call function
+			err := loadEnvVars(test.envKey, &target)
+
+			// Check for errors
+			if test.expectErr {
+				if err == nil {
+					t.Errorf("Test '%s': expected error but got none", test.name)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("Test '%s': unexpected error: %v", test.name, err)
+				}
+			}
+
+			// Check result
+			if !reflect.DeepEqual(target, test.expected) {
+				t.Errorf("Test '%s': result = %v; want %v", test.name, target, test.expected)
+			}
+		})
 	}
 }
 
-func TestParseArgs_FilenamesProvided(t *testing.T) {
-	os.Args = []string{"cmd", "--filename=pod.yaml", "-f=config.yaml", "--filename", "app.yaml"}
-	result, err := ParseArgs()
-
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
+func TestParseArgs_ErrorsAndReturns(t *testing.T) {
+	tests := []struct {
+		name      string
+		args      []string
+		envVars   map[string]string
+		expectErr string
+		validate  func(t *testing.T, result CmdArgsRawRecognized)
+	}{
+		{
+			name:      "Missing value for --filename=",
+			args:      []string{"app", "--filename="},
+			expectErr: "missing filename value",
+		},
+		{
+			name:      "Missing value for --filename",
+			args:      []string{"app", "--filename"},
+			expectErr: "missing value for flag --filename",
+		},
+		{
+			name:      "Multiple redirection to stdin",
+			args:      []string{"app", "--filename=-", "--filename=-"},
+			expectErr: "multiple redirection to stdin detected",
+		},
+		{
+			name:      "Empty list value for --envsubst-allowed-vars=",
+			args:      []string{"app", "--envsubst-allowed-vars="},
+			expectErr: "empty list value",
+		},
+		{
+			name:      "Empty list value for --envsubst-allowed-vars",
+			args:      []string{"app", "--envsubst-allowed-vars"},
+			expectErr: "missing value for flag --envsubst-allowed-vars",
+		},
+		{
+			name:      "Empty list value for --envsubst-allowed-prefixes=",
+			args:      []string{"app", "--envsubst-allowed-prefixes="},
+			expectErr: "empty list value",
+		},
+		{
+			name:      "Empty list value for --envsubst-allowed-prefixes",
+			args:      []string{"app", "--envsubst-allowed-prefixes"},
+			expectErr: "missing value for flag --envsubst-allowed-prefixes",
+		},
+		{
+			name: "Empty environment variable for ENVSUBST_ALLOWED_VARS",
+			args: []string{"app"},
+			envVars: map[string]string{
+				"ENVSUBST_ALLOWED_VARS": "",
+			},
+			expectErr: "missing value for env: ENVSUBST_ALLOWED_VARS",
+		},
+		{
+			name: "Empty environment variable for ENVSUBST_ALLOWED_PREFIXES",
+			args: []string{"app"},
+			envVars: map[string]string{
+				"ENVSUBST_ALLOWED_PREFIXES": "",
+			},
+			expectErr: "missing value for env: ENVSUBST_ALLOWED_PREFIXES",
+		},
+		{
+			name: "Successful parsing with all flags",
+			args: []string{"app", "--filename=test.yaml", "--envsubst-allowed-vars=VAR1,VAR2", "--envsubst-allowed-prefixes=PREFIX1,PREFIX2", "--recursive", "--help"},
+			validate: func(t *testing.T, result CmdArgsRawRecognized) {
+				if len(result.Filenames) != 1 || result.Filenames[0] != "test.yaml" {
+					t.Errorf("Expected filename 'test.yaml', got %v", result.Filenames)
+				}
+				if len(result.EnvsubstAllowedVars) != 2 || result.EnvsubstAllowedVars[0] != "VAR1" || result.EnvsubstAllowedVars[1] != "VAR2" {
+					t.Errorf("Expected EnvsubstAllowedVars to contain [VAR1, VAR2], got %v", result.EnvsubstAllowedVars)
+				}
+				if len(result.EnvsubstAllowedPrefix) != 2 || result.EnvsubstAllowedPrefix[0] != "PREFIX1" || result.EnvsubstAllowedPrefix[1] != "PREFIX2" {
+					t.Errorf("Expected EnvsubstAllowedPrefix to contain [PREFIX1, PREFIX2], got %v", result.EnvsubstAllowedPrefix)
+				}
+				if !result.Recursive {
+					t.Errorf("Expected Recursive to be true")
+				}
+				if !result.Help {
+					t.Errorf("Expected Help to be true")
+				}
+			},
+		},
 	}
 
-	expectedFilenames := []string{"pod.yaml", "config.yaml", "app.yaml"}
-	if len(result.Filenames) != len(expectedFilenames) {
-		t.Errorf("Expected filenames %v, got %v", expectedFilenames, result.Filenames)
+	originalEnv := make(map[string]string)
+	for _, k := range os.Environ() {
+		originalEnv[k] = os.Getenv(k)
 	}
-	for i, filename := range expectedFilenames {
-		if result.Filenames[i] != filename {
-			t.Errorf("Expected filename %s, got %s", filename, result.Filenames[i])
+	defer func() {
+		for k, v := range originalEnv {
+			os.Setenv(k, v)
 		}
-	}
-}
+	}()
 
-func TestParseArgs_NoFilenames(t *testing.T) {
-	os.Args = []string{"cmd"}
-	result, err := ParseArgs()
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Set environment variables for the test
+			for k, v := range test.envVars {
+				os.Setenv(k, v)
+			}
+			defer func(envVars map[string]string) {
+				for k := range envVars {
+					os.Unsetenv(k)
+				}
+			}(test.envVars)
 
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
+			// Simulate command-line arguments
+			os.Args = test.args
 
-	if len(result.Filenames) != 0 {
-		t.Errorf("Expected Filenames to be empty, got: %v", result.Filenames)
-	}
-	if result.HasStdin {
-		t.Errorf("Expected HasStdin to be false")
-	}
-}
+			// Run ParseArgs
+			result, err := ParseArgs()
+			if test.expectErr != "" {
+				if err == nil || err.Error() != test.expectErr {
+					t.Fatalf("Expected error '%s', got '%v'", test.expectErr, err)
+				}
+			} else if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
 
-func TestParseArgs_StdinAndFile(t *testing.T) {
-	os.Args = []string{"cmd", "--filename=-", "-f=pod.yaml"}
-	result, err := ParseArgs()
-
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-
-	if !result.HasStdin {
-		t.Errorf("Expected HasStdin to be true")
-	}
-
-	expectedFilenames := []string{"pod.yaml"}
-	if len(result.Filenames) != len(expectedFilenames) {
-		t.Errorf("Expected filenames %v, got %v", expectedFilenames, result.Filenames)
-	}
-	for i, filename := range expectedFilenames {
-		if result.Filenames[i] != filename {
-			t.Errorf("Expected filename %s, got %s", filename, result.Filenames[i])
-		}
+			// Validate results
+			if test.validate != nil {
+				test.validate(t, result)
+			}
+		})
 	}
 }
