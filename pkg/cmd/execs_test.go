@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"runtime"
 	"strings"
 	"testing"
@@ -119,4 +120,31 @@ func TestExecWithStdin(t *testing.T) {
 			t.Errorf("Expected stderr to contain error message, got empty")
 		}
 	})
+}
+
+func TestExecWithLargeInput(t *testing.T) {
+
+	// Generate a large input string
+	var largeInput strings.Builder
+	for i := 0; i < 1000000; i++ { // 1 million lines
+		largeInput.WriteString("Line " + fmt.Sprint(i) + "\n")
+	}
+
+	// Execute the command with the large input
+	result, err := ExecWithStdin("cat", []byte(largeInput.String()))
+
+	// Validate that the command executed successfully
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	// Validate that the output matches the input
+	if result.StdoutContent != largeInput.String() {
+		t.Errorf("Output does not match input\n")
+	}
+
+	// Validate stderr is empty
+	if result.StderrContent != "" {
+		t.Errorf("Expected no stderr, got: %s", result.StderrContent)
+	}
 }
