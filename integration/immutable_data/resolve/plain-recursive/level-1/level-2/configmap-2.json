@@ -1,0 +1,11 @@
+{
+  "apiVersion": "v1",
+  "kind": "ConfigMap",
+  "metadata": {
+    "name": "cm-2-level-2"
+  },
+  "data": {
+    "APP_ENV": "production",
+    "APP_DEBUG": "false"
+  }
+}

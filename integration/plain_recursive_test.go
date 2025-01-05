@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestEnvsubstIntegration_NoSubst_MixedManifests_MixedFileFormats(t *testing.T) {
+func TestEnvsubstIntegration_NoSubst_Recursive(t *testing.T) {
 
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("integration test was skipped due to configuration")
@@ -16,7 +16,7 @@ func TestEnvsubstIntegration_NoSubst_MixedManifests_MixedFileFormats(t *testing.
 
 	printEnvsubstVersionInfo(t)
 
-	namespaceName := "kubectl-envsubst-plain-yaml-json"
+	namespaceName := "kubectl-envsubst-plain-recursive"
 	createNs(t, namespaceName)
 
 	// Setup context
@@ -24,7 +24,13 @@ func TestEnvsubstIntegration_NoSubst_MixedManifests_MixedFileFormats(t *testing.
 
 	// Run kubectl-envsubst
 
-	cmdEnvsubstApply := exec.Command("kubectl", "envsubst", "apply", "-f", "immutable_data/resolve/plain-yaml-json")
+	cmdEnvsubstApply := exec.Command("kubectl",
+		"envsubst",
+		"apply",
+		"-f",
+		"immutable_data/resolve/plain-recursive",
+		"--recursive")
+
 	output, err := cmdEnvsubstApply.CombinedOutput()
 	stringOutput := string(output)
 	if err != nil {
@@ -33,17 +39,16 @@ func TestEnvsubstIntegration_NoSubst_MixedManifests_MixedFileFormats(t *testing.
 	t.Logf("\n%s\n", strings.TrimSpace(stringOutput))
 
 	expectResources := []string{
-		"serviceaccount/my-app",
-		"role.rbac.authorization.k8s.io/my-app",
-		"rolebinding.rbac.authorization.k8s.io/my-app",
-		"configmap/my-app",
-		"secret/my-app",
-		"deployment.apps/my-app",
-		"service/my-app",
+		"cm-1-level-0",
+		"cm-2-level-0",
+		"cm-3-level-0",
+		"cm-1-level-1",
+		"cm-2-level-1",
+		"cm-1-level-2",
+		"cm-2-level-2",
 	}
 
 	for _, er := range expectResources {
-		// Check result (it should be created/updated/unchanged, etc...)
 		expectedOutput := strings.Contains(stringOutput, er)
 		if !expectedOutput {
 			t.Errorf("Expected substituted output to contain '%s', got %s", er, stringOutput)

@@ -30,7 +30,7 @@ func TestEnvsubstIntegration_NoSubst_MixedManifests(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to run kubectl envsubst: %v, output: %s", err, stringOutput)
 	}
-	t.Log(stringOutput)
+	t.Logf("\n%s\n", strings.TrimSpace(stringOutput))
 
 	expectResources := []string{
 		"serviceaccount/my-app",

@@ -1,0 +1,9 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm-1-level-2
+  namespace: kubectl-envsubst-plain-combined
+data:
+  APP_ENV: "production"
+  APP_DEBUG: "false"
