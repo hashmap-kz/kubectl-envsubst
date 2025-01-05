@@ -29,3 +29,10 @@ archives:
     format: tar.gz
     files:
       - LICENSE
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
