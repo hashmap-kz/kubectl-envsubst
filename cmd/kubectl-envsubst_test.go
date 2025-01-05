@@ -88,7 +88,7 @@ data:
 
 	// Flush stdout and reset pointer for reading
 	os.Stdout.Sync()
-	stdoutFile.Seek(0, io.SeekStart)
+	_, _ = stdoutFile.Seek(0, io.SeekStart)
 
 	// Read and validate stdout content
 	output, err := io.ReadAll(stdoutFile)
