@@ -22,19 +22,19 @@ func TestResolveFilenames2(t *testing.T) {
 	testFile4 := filepath.Join(testSubDir, "file4.xml")
 
 	// Create test files and directories
-	if err := os.WriteFile(testFile1, []byte("content1"), 0644); err != nil {
+	if err := os.WriteFile(testFile1, []byte("content1"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(testFile2, []byte("content2"), 0644); err != nil {
+	if err := os.WriteFile(testFile2, []byte("content2"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Mkdir(testSubDir, 0755); err != nil {
+	if err := os.Mkdir(testSubDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(testFile3, []byte("content3"), 0644); err != nil {
+	if err := os.WriteFile(testFile3, []byte("content3"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(testFile4, []byte("content4"), 0644); err != nil {
+	if err := os.WriteFile(testFile4, []byte("content4"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -165,19 +165,19 @@ func TestResolveAllFiles(t *testing.T) {
 	subDir := filepath.Join(tempDir, "subdir")
 	subFile := filepath.Join(subDir, "file3.yaml")
 
-	if err := os.WriteFile(file1, []byte("test content"), 0644); err != nil {
+	if err := os.WriteFile(file1, []byte("test content"), 0o600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
-	if err := os.WriteFile(file2, []byte("test content"), 0644); err != nil {
+	if err := os.WriteFile(file2, []byte("test content"), 0o600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
-	if err := os.WriteFile(file3, []byte("test content"), 0644); err != nil {
+	if err := os.WriteFile(file3, []byte("test content"), 0o600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
-	if err := os.Mkdir(subDir, 0755); err != nil {
+	if err := os.Mkdir(subDir, 0o755); err != nil {
 		t.Fatalf("Failed to create test subdir: %v", err)
 	}
-	if err := os.WriteFile(subFile, []byte("test content"), 0644); err != nil {
+	if err := os.WriteFile(subFile, []byte("test content"), 0o600); err != nil {
 		t.Fatalf("Failed to create test subfile: %v", err)
 	}
 

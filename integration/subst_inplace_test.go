@@ -8,7 +8,6 @@ import (
 )
 
 func TestSubstFromFile(t *testing.T) {
-
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("integration test was skipped due to configuration")
 		return
@@ -42,7 +41,8 @@ spec:
 			envVars: []string{
 				"SERVICE_NAME=my-service",
 				"APP_NAME=my-app",
-				"ENVSUBST_ALLOWED_PREFIXES=SERVICE_,APP_"},
+				"ENVSUBST_ALLOWED_PREFIXES=SERVICE_,APP_",
+			},
 
 			expectedOutput: "service/my-service",
 		},
@@ -85,7 +85,6 @@ spec:
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			// prepare tmp file with content
 			tmpFile, err := createTempFile(t, tc.inputContent, "yaml")
 			if err != nil {
@@ -115,7 +114,6 @@ spec:
 					t.Errorf("Expected image: %s, got %s", tc.expectedImage, imageName)
 				}
 			}
-
 		})
 	}
 }

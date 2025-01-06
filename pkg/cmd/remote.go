@@ -4,12 +4,18 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 )
 
-func ReadRemoteFileContent(url string) ([]byte, error) {
+func ReadRemoteFileContent(inputURL string) ([]byte, error) {
+	// Parse and validate the URL
+	parsedURL, err := url.Parse(inputURL)
+	if err != nil || parsedURL.Scheme == "" || parsedURL.Host == "" {
+		return nil, fmt.Errorf("invalid URL: %s", inputURL)
+	}
 
 	// Make the HTTP GET request
-	response, err := http.Get(url)
+	response, err := http.Get(parsedURL.String())
 	if err != nil {
 		return nil, err
 	}
@@ -17,7 +23,7 @@ func ReadRemoteFileContent(url string) ([]byte, error) {
 
 	// Check for HTTP errors
 	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("cannot GET file content from: %s", url)
+		return nil, fmt.Errorf("cannot GET file content from: %s", inputURL)
 	}
 
 	// Read the response body

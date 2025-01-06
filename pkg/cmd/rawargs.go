@@ -11,7 +11,7 @@ const (
 	envsubstAllowedPrefixesEnv = "ENVSUBST_ALLOWED_PREFIXES"
 )
 
-type CmdArgsRawRecognized struct {
+type ArgsRawRecognized struct {
 	Filenames             []string
 	EnvsubstAllowedVars   []string
 	EnvsubstAllowedPrefix []string
@@ -30,14 +30,13 @@ func allEmpty(values []string) bool {
 	return true
 }
 
-func ParseArgs() (CmdArgsRawRecognized, error) {
+func ParseArgs() (ArgsRawRecognized, error) {
 	args := os.Args[1:] // Skip the program name
-	var result CmdArgsRawRecognized
+	var result ArgsRawRecognized
 
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
 		switch {
-
 		// Handle --filename= or -f=
 		case strings.HasPrefix(arg, "--filename="), strings.HasPrefix(arg, "-f="):
 			if err := handleFilename(strings.SplitN(arg, "=", 2)[1], &result); err != nil {
@@ -122,7 +121,7 @@ func ParseArgs() (CmdArgsRawRecognized, error) {
 	return result, nil
 }
 
-func handleFilename(filename string, result *CmdArgsRawRecognized) error {
+func handleFilename(filename string, result *ArgsRawRecognized) error {
 	if filename == "" {
 		return fmt.Errorf("missing filename value")
 	}

@@ -8,7 +8,6 @@ import (
 )
 
 func TestEnvsubstIntegration_NoSubst_MixedManifests(t *testing.T) {
-
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("integration test was skipped due to configuration")
 		return
@@ -49,5 +48,4 @@ func TestEnvsubstIntegration_NoSubst_MixedManifests(t *testing.T) {
 			t.Errorf("Expected substituted output to contain '%s', got %s", er, stringOutput)
 		}
 	}
-
 }

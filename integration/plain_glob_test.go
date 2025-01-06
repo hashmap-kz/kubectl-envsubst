@@ -8,7 +8,6 @@ import (
 )
 
 func TestEnvsubstIntegration_NoSubst_GlobPatterns_Yaml(t *testing.T) {
-
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("integration test was skipped due to configuration")
 		return
@@ -54,11 +53,9 @@ func TestEnvsubstIntegration_NoSubst_GlobPatterns_Yaml(t *testing.T) {
 			t.Errorf("Expected substituted output does not contain '%s'", er)
 		}
 	}
-
 }
 
 func TestEnvsubstIntegration_NoSubst_GlobPatterns_Json(t *testing.T) {
-
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("integration test was skipped due to configuration")
 		return
@@ -104,5 +101,4 @@ func TestEnvsubstIntegration_NoSubst_GlobPatterns_Json(t *testing.T) {
 			t.Errorf("Expected substituted output does not contain '%s'", er)
 		}
 	}
-
 }
