@@ -1059,3 +1059,92 @@ func TestVarInSlice(t *testing.T) {
 		t.Errorf("Did not expect VAR4 to be in slice")
 	}
 }
+
+func TestRandomText_AllowedVars(t *testing.T) {
+
+	var alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+	var input = strings.TrimSpace(`
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
+Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
+Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+`)
+
+	var template = strings.TrimSpace(`
+$L_$O$R$E$M $I$P$S$U$M $D$O$L$O$R $S$I$T $A$M$E$T, $C$O$N$S$E$C$T$E$T$U$R $A$D$I$P$I$S$C$I$N$G $E$L$I$T, $S$E$D $D$O $E$I$U$S$M$O$D $T$E$M$P$O$R $I$N$C$I$D$I$D$U$N$T $U$T $L$A$B$O$R$E $E$T $D$O$L$O$R$E $M$A$G$N$A $A$L$I$Q$U$A. 
+$U_$T $E$N$I$M $A$D $M$I$N$I$M $V$E$N$I$A$M, $Q$U$I$S $N$O$S$T$R$U$D $E$X$E$R$C$I$T$A$T$I$O$N $U$L$L$A$M$C$O $L$A$B$O$R$I$S $N$I$S$I $U$T $A$L$I$Q$U$I$P $E$X $E$A $C$O$M$M$O$D$O $C$O$N$S$E$Q$U$A$T. 
+$D_$U$I$S $A$U$T$E $I$R$U$R$E $D$O$L$O$R $I$N $R$E$P$R$E$H$E$N$D$E$R$I$T $I$N $V$O$L$U$P$T$A$T$E $V$E$L$I$T $E$S$S$E $C$I$L$L$U$M $D$O$L$O$R$E $E$U $F$U$G$I$A$T $N$U$L$L$A $P$A$R$I$A$T$U$R. 
+$E_$X$C$E$P$T$E$U$R $S$I$N$T $O$C$C$A$E$C$A$T $C$U$P$I$D$A$T$A$T $N$O$N $P$R$O$I$D$E$N$T, $S$U$N$T $I$N $C$U$L$P$A $Q$U$I $O$F$F$I$C$I$A $D$E$S$E$R$U$N$T $M$O$L$L$I$T $A$N$I$M $I$D $E$S$T $L$A$B$O$R$U$M.
+`)
+
+	allowedVars := []string{}
+
+	for _, c := range alpha {
+		c := string(c)
+		os.Setenv(strings.ToUpper(c)+"_", strings.ToUpper(c))
+		os.Setenv(strings.ToUpper(c), strings.ToLower(c))
+		allowedVars = append(allowedVars, strings.ToUpper(c))
+		allowedVars = append(allowedVars, strings.ToUpper(c)+"_")
+	}
+	defer func() {
+		for _, c := range alpha {
+			c := string(c)
+			os.Unsetenv(strings.ToUpper(c) + "_")
+			os.Unsetenv(strings.ToUpper(c))
+		}
+	}()
+
+	envsubst := NewEnvsubst(allowedVars, []string{}, true)
+	result, err := envsubst.SubstituteEnvs(template)
+	if err != nil {
+		t.Fatal("Unexpected error: ", err)
+	}
+	if result != input {
+		t.Fatal("Texts are diff")
+	}
+}
+
+func TestRandomText_AllowedPrefixes(t *testing.T) {
+
+	var alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+	var input = strings.TrimSpace(`
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
+Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
+Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+`)
+
+	var template = strings.TrimSpace(`
+$L_$O$R$E$M $I$P$S$U$M $D$O$L$O$R $S$I$T $A$M$E$T, $C$O$N$S$E$C$T$E$T$U$R $A$D$I$P$I$S$C$I$N$G $E$L$I$T, $S$E$D $D$O $E$I$U$S$M$O$D $T$E$M$P$O$R $I$N$C$I$D$I$D$U$N$T $U$T $L$A$B$O$R$E $E$T $D$O$L$O$R$E $M$A$G$N$A $A$L$I$Q$U$A. 
+$U_$T $E$N$I$M $A$D $M$I$N$I$M $V$E$N$I$A$M, $Q$U$I$S $N$O$S$T$R$U$D $E$X$E$R$C$I$T$A$T$I$O$N $U$L$L$A$M$C$O $L$A$B$O$R$I$S $N$I$S$I $U$T $A$L$I$Q$U$I$P $E$X $E$A $C$O$M$M$O$D$O $C$O$N$S$E$Q$U$A$T. 
+$D_$U$I$S $A$U$T$E $I$R$U$R$E $D$O$L$O$R $I$N $R$E$P$R$E$H$E$N$D$E$R$I$T $I$N $V$O$L$U$P$T$A$T$E $V$E$L$I$T $E$S$S$E $C$I$L$L$U$M $D$O$L$O$R$E $E$U $F$U$G$I$A$T $N$U$L$L$A $P$A$R$I$A$T$U$R. 
+$E_$X$C$E$P$T$E$U$R $S$I$N$T $O$C$C$A$E$C$A$T $C$U$P$I$D$A$T$A$T $N$O$N $P$R$O$I$D$E$N$T, $S$U$N$T $I$N $C$U$L$P$A $Q$U$I $O$F$F$I$C$I$A $D$E$S$E$R$U$N$T $M$O$L$L$I$T $A$N$I$M $I$D $E$S$T $L$A$B$O$R$U$M.
+`)
+
+	allowedPrefixes := []string{}
+
+	for _, c := range alpha {
+		c := string(c)
+		os.Setenv(strings.ToUpper(c)+"_", strings.ToUpper(c))
+		os.Setenv(strings.ToUpper(c), strings.ToLower(c))
+		allowedPrefixes = append(allowedPrefixes, strings.ToUpper(c))
+	}
+	defer func() {
+		for _, c := range alpha {
+			c := string(c)
+			os.Unsetenv(strings.ToUpper(c) + "_")
+			os.Unsetenv(strings.ToUpper(c))
+		}
+	}()
+
+	envsubst := NewEnvsubst([]string{}, allowedPrefixes, true)
+	result, err := envsubst.SubstituteEnvs(template)
+	if err != nil {
+		t.Fatal("Unexpected error: ", err)
+	}
+	if result != input {
+		t.Fatal("Texts are diff")
+	}
+}
