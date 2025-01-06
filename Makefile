@@ -60,6 +60,11 @@ test-integration-cmd: install kind-setup
 lint:
 	golangci-lint run ./...
 
+# Check goreleaser
+.PHONY: snapshot
+snapshot:
+	goreleaser release --skip sign --skip publish --snapshot --clean
+
 # Format the code
 .PHONY: format
 format:
