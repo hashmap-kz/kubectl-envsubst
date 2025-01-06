@@ -85,7 +85,6 @@ func printEnvsubstVersionInfo(t *testing.T) {
 			}
 		}
 	}
-
 }
 
 func getDeploymentImageName(t *testing.T, deploymentName string) string {
@@ -100,7 +99,6 @@ func getDeploymentImageName(t *testing.T, deploymentName string) string {
 }
 
 func createTempFile(t *testing.T, content string, extension string) (string, error) {
-
 	tempFile, err := os.CreateTemp("", "kubectl-envsubst-tmp-*."+extension)
 	if err != nil {
 		return "", fmt.Errorf("failed to create temp file: %w", err)

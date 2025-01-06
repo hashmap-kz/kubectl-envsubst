@@ -9,10 +9,8 @@ import (
 	"strings"
 )
 
-var (
-	// Match placeholders like ${VAR} or $VAR
-	envVarRegex = regexp.MustCompile(`\$\{?([a-zA-Z_][a-zA-Z0-9_]*)\}?`)
-)
+// Match placeholders like ${VAR} or $VAR
+var envVarRegex = regexp.MustCompile(`\$\{?([a-zA-Z_][a-zA-Z0-9_]*)\}?`)
 
 type Envsubst struct {
 	allowedVars     []string
@@ -21,7 +19,7 @@ type Envsubst struct {
 	verbose         bool
 }
 
-func NewEnvsubst(allowedVars []string, allowedPrefixes []string, strict bool) *Envsubst {
+func NewEnvsubst(allowedVars, allowedPrefixes []string, strict bool) *Envsubst {
 	return &Envsubst{
 		allowedVars:     allowedVars,
 		allowedPrefixes: allowedPrefixes,
@@ -30,7 +28,6 @@ func NewEnvsubst(allowedVars []string, allowedPrefixes []string, strict bool) *E
 }
 
 func (p *Envsubst) SubstituteEnvs(text string) (string, error) {
-
 	// Collect allowed environment variables
 	envMap := p.collectAllowedEnvVars()
 

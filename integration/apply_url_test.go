@@ -9,7 +9,6 @@ import (
 )
 
 func TestEnvsubstIntegration_SubstApplyFromUrl(t *testing.T) {
-
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("integration test was skipped due to configuration")
 		return
@@ -57,5 +56,4 @@ func TestEnvsubstIntegration_SubstApplyFromUrl(t *testing.T) {
 	if !strings.Contains(string(validateOutput), resourceName) {
 		t.Errorf("Expected resource %s to exist, got %s", resourceName, string(validateOutput))
 	}
-
 }

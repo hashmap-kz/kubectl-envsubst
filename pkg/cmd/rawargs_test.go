@@ -10,73 +10,73 @@ func TestParseArgs(t *testing.T) {
 	cases := []struct {
 		name           string
 		args           []string
-		expectedResult CmdArgsRawRecognized
+		expectedResult ArgsRawRecognized
 		expectedError  bool
 	}{
 		{
 			name:           "No arguments",
 			args:           []string{},
-			expectedResult: CmdArgsRawRecognized{},
+			expectedResult: ArgsRawRecognized{},
 			expectedError:  false,
 		},
 		{
 			name:           "Single filename with =",
 			args:           []string{"--filename=file1.yaml"},
-			expectedResult: CmdArgsRawRecognized{Filenames: []string{"file1.yaml"}},
+			expectedResult: ArgsRawRecognized{Filenames: []string{"file1.yaml"}},
 			expectedError:  false,
 		},
 		{
 			name:           "Recursive flag with long option",
 			args:           []string{"--recursive"},
-			expectedResult: CmdArgsRawRecognized{Recursive: true},
+			expectedResult: ArgsRawRecognized{Recursive: true},
 			expectedError:  false,
 		},
 		{
 			name:           "Recursive flag with short option",
 			args:           []string{"-R"},
-			expectedResult: CmdArgsRawRecognized{Recursive: true},
+			expectedResult: ArgsRawRecognized{Recursive: true},
 			expectedError:  false,
 		},
 		{
 			name:           "Envsubst allowed vars",
 			args:           []string{"--envsubst-allowed-vars=HOME,USER"},
-			expectedResult: CmdArgsRawRecognized{EnvsubstAllowedVars: []string{"HOME", "USER"}},
+			expectedResult: ArgsRawRecognized{EnvsubstAllowedVars: []string{"HOME", "USER"}},
 			expectedError:  false,
 		},
 		{
 			name:           "Envsubst allowed vars (no =)",
 			args:           []string{"--envsubst-allowed-vars", "HOME,USER"},
-			expectedResult: CmdArgsRawRecognized{EnvsubstAllowedVars: []string{"HOME", "USER"}},
+			expectedResult: ArgsRawRecognized{EnvsubstAllowedVars: []string{"HOME", "USER"}},
 			expectedError:  false,
 		},
 		{
 			name:           "Envsubst allowed vars, with append",
 			args:           []string{"--envsubst-allowed-vars=HOME,USER", "--envsubst-allowed-vars=PWD"},
-			expectedResult: CmdArgsRawRecognized{EnvsubstAllowedVars: []string{"HOME", "USER", "PWD"}},
+			expectedResult: ArgsRawRecognized{EnvsubstAllowedVars: []string{"HOME", "USER", "PWD"}},
 			expectedError:  false,
 		},
 		{
 			name:           "Envsubst allowed vars, with append (no =)",
 			args:           []string{"--envsubst-allowed-vars", "HOME,USER", "--envsubst-allowed-vars", "PWD"},
-			expectedResult: CmdArgsRawRecognized{EnvsubstAllowedVars: []string{"HOME", "USER", "PWD"}},
+			expectedResult: ArgsRawRecognized{EnvsubstAllowedVars: []string{"HOME", "USER", "PWD"}},
 			expectedError:  false,
 		},
 		{
 			name:           "Missing value for --filename",
 			args:           []string{"--filename"},
-			expectedResult: CmdArgsRawRecognized{},
+			expectedResult: ArgsRawRecognized{},
 			expectedError:  true,
 		},
 		{
 			name:           "Unknown flag",
 			args:           []string{"--unknown-flag"},
-			expectedResult: CmdArgsRawRecognized{Others: []string{"--unknown-flag"}},
+			expectedResult: ArgsRawRecognized{Others: []string{"--unknown-flag"}},
 			expectedError:  false,
 		},
 		{
 			name: "Mix of valid and invalid args",
 			args: []string{"--filename=file.yaml", "--unknown"},
-			expectedResult: CmdArgsRawRecognized{
+			expectedResult: ArgsRawRecognized{
 				Filenames: []string{"file.yaml"},
 
 				Others: []string{"--unknown"},
@@ -86,67 +86,67 @@ func TestParseArgs(t *testing.T) {
 		{
 			name:           "Multiple filenames",
 			args:           []string{"--filename=file1.yaml", "--filename=file2.yaml"},
-			expectedResult: CmdArgsRawRecognized{Filenames: []string{"file1.yaml", "file2.yaml"}},
+			expectedResult: ArgsRawRecognized{Filenames: []string{"file1.yaml", "file2.yaml"}},
 			expectedError:  false,
 		},
 		{
 			name:           "Envsubst allowed prefixes",
 			args:           []string{"--envsubst-allowed-prefixes=CI_,APP"},
-			expectedResult: CmdArgsRawRecognized{EnvsubstAllowedPrefix: []string{"CI_", "APP"}},
+			expectedResult: ArgsRawRecognized{EnvsubstAllowedPrefix: []string{"CI_", "APP"}},
 			expectedError:  false,
 		},
 		{
 			name:           "Envsubst allowed prefixes (no =)",
 			args:           []string{"--envsubst-allowed-prefixes", "CI_,APP"},
-			expectedResult: CmdArgsRawRecognized{EnvsubstAllowedPrefix: []string{"CI_", "APP"}},
+			expectedResult: ArgsRawRecognized{EnvsubstAllowedPrefix: []string{"CI_", "APP"}},
 			expectedError:  false,
 		},
 		{
 			name:           "Envsubst allowed prefixes, with append",
 			args:           []string{"--envsubst-allowed-prefixes=CI_,APP", "--envsubst-allowed-prefixes=TF_VAR_"},
-			expectedResult: CmdArgsRawRecognized{EnvsubstAllowedPrefix: []string{"CI_", "APP", "TF_VAR_"}},
+			expectedResult: ArgsRawRecognized{EnvsubstAllowedPrefix: []string{"CI_", "APP", "TF_VAR_"}},
 			expectedError:  false,
 		},
 		{
 			name:           "Envsubst allowed prefixes with append (no =)",
 			args:           []string{"--envsubst-allowed-prefixes", "CI_,APP", "--envsubst-allowed-prefixes", "TF_VAR_"},
-			expectedResult: CmdArgsRawRecognized{EnvsubstAllowedPrefix: []string{"CI_", "APP", "TF_VAR_"}},
+			expectedResult: ArgsRawRecognized{EnvsubstAllowedPrefix: []string{"CI_", "APP", "TF_VAR_"}},
 			expectedError:  false,
 		},
 		{
 			name:           "Empty value for --filename",
 			args:           []string{"--filename="},
-			expectedResult: CmdArgsRawRecognized{},
+			expectedResult: ArgsRawRecognized{},
 			expectedError:  true,
 		},
 		{
 			name:           "Empty value for --envsubst-allowed-vars",
 			args:           []string{"--envsubst-allowed-vars="},
-			expectedResult: CmdArgsRawRecognized{},
+			expectedResult: ArgsRawRecognized{},
 			expectedError:  true,
 		},
 		{
 			name:           "Single filename with short flag",
 			args:           []string{"-f=file3.yaml"},
-			expectedResult: CmdArgsRawRecognized{Filenames: []string{"file3.yaml"}},
+			expectedResult: ArgsRawRecognized{Filenames: []string{"file3.yaml"}},
 			expectedError:  false,
 		},
 		{
 			name:           "Unrecognized argument without prefix",
 			args:           []string{"random-arg"},
-			expectedResult: CmdArgsRawRecognized{Others: []string{"random-arg"}},
+			expectedResult: ArgsRawRecognized{Others: []string{"random-arg"}},
 			expectedError:  false,
 		},
 		{
 			name:           "Multiple unrecognized arguments",
 			args:           []string{"random-arg1", "random-arg2"},
-			expectedResult: CmdArgsRawRecognized{Others: []string{"random-arg1", "random-arg2"}},
+			expectedResult: ArgsRawRecognized{Others: []string{"random-arg1", "random-arg2"}},
 			expectedError:  false,
 		},
 		{
 			name: "Mixed valid and unrecognized arguments",
 			args: []string{"random-arg", "--filename=file.yaml"},
-			expectedResult: CmdArgsRawRecognized{
+			expectedResult: ArgsRawRecognized{
 				Filenames: []string{"file.yaml"},
 				Others:    []string{"random-arg"},
 			},
@@ -155,13 +155,13 @@ func TestParseArgs(t *testing.T) {
 		{
 			name:           "Unrecognized argument resembling a flag",
 			args:           []string{"-notarealflag"},
-			expectedResult: CmdArgsRawRecognized{Others: []string{"-notarealflag"}},
+			expectedResult: ArgsRawRecognized{Others: []string{"-notarealflag"}},
 			expectedError:  false,
 		},
 		{
 			name: "Unrecognized argument with spaces",
 			args: []string{"random-arg", "--filename=file.yaml", "another-random-arg"},
-			expectedResult: CmdArgsRawRecognized{
+			expectedResult: ArgsRawRecognized{
 				Filenames: []string{"file.yaml"},
 				Others:    []string{"random-arg", "another-random-arg"},
 			},
@@ -170,7 +170,7 @@ func TestParseArgs(t *testing.T) {
 		{
 			name: "Valid args with unrecognized argument that looks like a short flag (1)",
 			args: []string{"-R", "-xyz"},
-			expectedResult: CmdArgsRawRecognized{
+			expectedResult: ArgsRawRecognized{
 				Recursive: true,
 				Others:    []string{"-xyz"},
 			},
@@ -179,7 +179,7 @@ func TestParseArgs(t *testing.T) {
 		{
 			name: "Valid args with unrecognized argument that looks like a short flag (2)",
 			args: []string{"-h", "-xyz"},
-			expectedResult: CmdArgsRawRecognized{
+			expectedResult: ArgsRawRecognized{
 				Help:   true,
 				Others: []string{"-xyz"},
 			},
@@ -209,7 +209,6 @@ func TestParseArgs(t *testing.T) {
 func TestParseArgs_SingleStdin(t *testing.T) {
 	os.Args = []string{"cmd", "--filename", "-"}
 	result, err := ParseArgs()
-
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -329,7 +328,7 @@ func TestParseArgs_ErrorsAndReturns(t *testing.T) {
 		args      []string
 		envVars   map[string]string
 		expectErr string
-		validate  func(t *testing.T, result CmdArgsRawRecognized)
+		validate  func(t *testing.T, result ArgsRawRecognized)
 	}{
 		{
 			name:      "Missing value for --filename=",
@@ -385,7 +384,7 @@ func TestParseArgs_ErrorsAndReturns(t *testing.T) {
 		{
 			name: "Successful parsing with all flags",
 			args: []string{"app", "--filename=test.yaml", "--envsubst-allowed-vars=VAR1,VAR2", "--envsubst-allowed-prefixes=PREFIX1,PREFIX2", "--recursive", "--help"},
-			validate: func(t *testing.T, result CmdArgsRawRecognized) {
+			validate: func(t *testing.T, result ArgsRawRecognized) {
 				if len(result.Filenames) != 1 || result.Filenames[0] != "test.yaml" {
 					t.Errorf("Expected filename 'test.yaml', got %v", result.Filenames)
 				}

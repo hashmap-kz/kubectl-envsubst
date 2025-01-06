@@ -8,7 +8,6 @@ import (
 )
 
 func TestEnvsubstIntegration_Subst_MixedManifests_MixedExtensions_MixedFileFormats(t *testing.T) {
-
 	if os.Getenv(integrationTestEnv) != integrationTestFlag {
 		t.Log("integration test was skipped due to configuration")
 		return
@@ -63,5 +62,4 @@ func TestEnvsubstIntegration_Subst_MixedManifests_MixedExtensions_MixedFileForma
 			t.Errorf("Expected substituted output to contain '%s', got %s", er, stringOutput)
 		}
 	}
-
 }

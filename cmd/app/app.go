@@ -2,16 +2,16 @@ package app
 
 import (
 	"fmt"
-	"github.com/hashmap-kz/kubectl-envsubst/pkg/cmd"
 	"io"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/hashmap-kz/kubectl-envsubst/pkg/cmd"
 )
 
 // runApp executes the plugin, with logic divided into smaller, testable components
 func RunApp() error {
-
 	// parse all passed cmd arguments without any modification
 	flags, err := cmd.ParseArgs()
 	if err != nil {
@@ -44,7 +44,7 @@ func RunApp() error {
 
 	// apply STDIN (if any)
 	if flags.HasStdin {
-		err := applyStdin(flags, kubectl)
+		err := applyStdin(&flags, kubectl)
 		if err != nil {
 			return err
 		}
@@ -52,7 +52,7 @@ func RunApp() error {
 
 	// apply passed files
 	for _, filename := range files {
-		err := applyOneFile(flags, kubectl, filename)
+		err := applyOneFile(&flags, kubectl, filename)
 		if err != nil {
 			return err
 		}
@@ -62,7 +62,7 @@ func RunApp() error {
 }
 
 // applyStdin substitutes content, passed to stdin `kubectl apply -f -`
-func applyStdin(flags cmd.CmdArgsRawRecognized, kubectl string) error {
+func applyStdin(flags *cmd.ArgsRawRecognized, kubectl string) error {
 	stdin, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		return err
@@ -78,8 +78,7 @@ func applyStdin(flags cmd.CmdArgsRawRecognized, kubectl string) error {
 }
 
 // applyOneFile read file (url, local-path), substitute its content, apply result
-func applyOneFile(flags cmd.CmdArgsRawRecognized, kubectl string, filename string) error {
-
+func applyOneFile(flags *cmd.ArgsRawRecognized, kubectl, filename string) error {
 	// recognize file type
 
 	var contentForSubst []byte
@@ -107,7 +106,7 @@ func applyOneFile(flags cmd.CmdArgsRawRecognized, kubectl string, filename strin
 }
 
 // substituteContent runs the subst module for a given content
-func substituteContent(flags cmd.CmdArgsRawRecognized, contentForSubst []byte) (string, error) {
+func substituteContent(flags *cmd.ArgsRawRecognized, contentForSubst []byte) (string, error) {
 	envSubst := cmd.NewEnvsubst(flags.EnvsubstAllowedVars, flags.EnvsubstAllowedPrefix, true)
 	substitutedBuffer, err := envSubst.SubstituteEnvs(string(contentForSubst))
 	if err != nil {
@@ -117,12 +116,11 @@ func substituteContent(flags cmd.CmdArgsRawRecognized, contentForSubst []byte) (
 }
 
 // execKubectl applies a result buffer, bu running `kubectl apply -f -`
-func execKubectl(flags cmd.CmdArgsRawRecognized, kubectl string, substitutedBuffer string) error {
+func execKubectl(flags *cmd.ArgsRawRecognized, kubectl, substitutedBuffer string) error {
 	// prepare kubectl args
 	args := []string{}
 	args = append(args, flags.Others...)
-	args = append(args, "-f")
-	args = append(args, "-")
+	args = append(args, "-f", "-")
 
 	// pass stream of files to stdin
 	execCmd, err := cmd.ExecWithStdin(kubectl, []byte(substitutedBuffer), args...)

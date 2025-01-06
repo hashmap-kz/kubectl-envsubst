@@ -113,7 +113,7 @@ func TestEnvsubst(t *testing.T) {
 }
 
 func TestEnvsubstWithManifestsParts(t *testing.T) {
-	var manifestSnippetInput = strings.TrimSpace(`
+	manifestSnippetInput := strings.TrimSpace(`
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -142,7 +142,7 @@ spec:
             pathType: ImplementationSpecific
 `)
 
-	var manifestSnippetExpect = strings.TrimSpace(`
+	manifestSnippetExpect := strings.TrimSpace(`
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -320,7 +320,7 @@ func TestStrictMode(t *testing.T) {
 }
 
 func TestComplexManifests(t *testing.T) {
-	var complexMixedTest = `
+	complexMixedTest := `
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -713,7 +713,6 @@ spec:
 		t.Run(test.name, func(t *testing.T) {
 			envsubst := NewEnvsubst(test.allowedEnvs, []string{}, true)
 			output, err := envsubst.SubstituteEnvs(test.text)
-
 			if err != nil {
 				t.Errorf("Unexpected error status for complex test")
 			}
@@ -755,7 +754,10 @@ func TestSubstituteEnvs_VerboseMode_DebugUnresolvedVars(t *testing.T) {
 	log.SetOutput(&logBuffer)
 
 	text := "Hello $VAR1 and ${VAR2}!"
-	_, _ = envsubst.SubstituteEnvs(text)
+	_, err := envsubst.SubstituteEnvs(text)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
 
 	logBuf := logBuffer.String()
 	if !strings.Contains(logBuf, "DEBUG: an unresolved variable that is not in the filter list remains unchanged: VAR2") {
@@ -769,9 +771,8 @@ func TestSubstituteEnvs_UnresolvedVarsNotInFilter_NoError(t *testing.T) {
 
 	envsubst := NewEnvsubst([]string{"VAR1"}, []string{}, true)
 
-	text := "Hello $VAR1 and ${VAR3}!"
-	result, err := envsubst.SubstituteEnvs(text)
-
+	const s = "Hello $VAR1 and ${VAR3}!"
+	result, err := envsubst.SubstituteEnvs(s)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -812,7 +813,6 @@ func TestSubstituteEnvs_AllResolved(t *testing.T) {
 	text := "Hello $VAR1 and ${VAR2}!"
 	expected := "Hello value1 and value2!"
 	result, err := envsubst.SubstituteEnvs(text)
-
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -830,7 +830,6 @@ func TestSubstituteEnvs_NoFilter_NoErrorForUnresolved(t *testing.T) {
 	text := "Hello $VAR1 and ${VAR3}!"
 	expected := "Hello $VAR1 and ${VAR3}!"
 	result, err := envsubst.SubstituteEnvs(text)
-
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -845,7 +844,6 @@ func TestSubstituteEnvs_EmptyInput(t *testing.T) {
 	text := ""
 	expected := ""
 	result, err := envsubst.SubstituteEnvs(text)
-
 	if err != nil {
 		t.Fatalf("Unexpected error for empty input: %v", err)
 	}
@@ -860,15 +858,13 @@ func TestSubstituteEnvs_EmptyAllowedLists(t *testing.T) {
 
 	envsubst := NewEnvsubst([]string{}, []string{}, true)
 
-	text := "Hello $VAR1!"
-	expected := "Hello $VAR1!"
-	result, err := envsubst.SubstituteEnvs(text)
-
+	const s = "Hello $VAR1!"
+	result, err := envsubst.SubstituteEnvs(s)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
-	if result != expected {
-		t.Errorf("Expected '%s', got '%s'", expected, result)
+	if result != s {
+		t.Errorf("Expected '%s', got '%s'", s, result)
 	}
 }
 
@@ -894,7 +890,6 @@ func TestSubstituteEnvs_OverlappingPrefixes(t *testing.T) {
 	text := "Hello $APP_VAR1 and ${APP_VAR2}!"
 	expected := "Hello value1 and value2!"
 	result, err := envsubst.SubstituteEnvs(text)
-
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -913,7 +908,6 @@ func TestSubstituteEnvs_StrictMode_MixedFilters(t *testing.T) {
 
 	text := "Hello $VAR1 and ${APP_VAR2} and ${VAR3}!"
 	result, err := envsubst.SubstituteEnvs(text)
-
 	// Should not raise an error since unresolved ${VAR3} is not in filters
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
@@ -1061,17 +1055,16 @@ func TestVarInSlice(t *testing.T) {
 }
 
 func TestRandomText_AllowedVars(t *testing.T) {
+	alpha := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-	var alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-	var input = strings.TrimSpace(`
+	input := strings.TrimSpace(`
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
 Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
 Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
 Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 `)
 
-	var template = strings.TrimSpace(`
+	template := strings.TrimSpace(`
 $L_$O$R$E$M $I$P$S$U$M $D$O$L$O$R $S$I$T $A$M$E$T, $C$O$N$S$E$C$T$E$T$U$R $A$D$I$P$I$S$C$I$N$G $E$L$I$T, $S$E$D $D$O $E$I$U$S$M$O$D $T$E$M$P$O$R $I$N$C$I$D$I$D$U$N$T $U$T $L$A$B$O$R$E $E$T $D$O$L$O$R$E $M$A$G$N$A $A$L$I$Q$U$A. 
 $U_$T $E$N$I$M $A$D $M$I$N$I$M $V$E$N$I$A$M, $Q$U$I$S $N$O$S$T$R$U$D $E$X$E$R$C$I$T$A$T$I$O$N $U$L$L$A$M$C$O $L$A$B$O$R$I$S $N$I$S$I $U$T $A$L$I$Q$U$I$P $E$X $E$A $C$O$M$M$O$D$O $C$O$N$S$E$Q$U$A$T. 
 $D_$U$I$S $A$U$T$E $I$R$U$R$E $D$O$L$O$R $I$N $R$E$P$R$E$H$E$N$D$E$R$I$T $I$N $V$O$L$U$P$T$A$T$E $V$E$L$I$T $E$S$S$E $C$I$L$L$U$M $D$O$L$O$R$E $E$U $F$U$G$I$A$T $N$U$L$L$A $P$A$R$I$A$T$U$R. 
@@ -1084,8 +1077,7 @@ $E_$X$C$E$P$T$E$U$R $S$I$N$T $O$C$C$A$E$C$A$T $C$U$P$I$D$A$T$A$T $N$O$N $P$R$O$I
 		c := string(c)
 		os.Setenv(strings.ToUpper(c)+"_", strings.ToUpper(c))
 		os.Setenv(strings.ToUpper(c), strings.ToLower(c))
-		allowedVars = append(allowedVars, strings.ToUpper(c))
-		allowedVars = append(allowedVars, strings.ToUpper(c)+"_")
+		allowedVars = append(allowedVars, strings.ToUpper(c), strings.ToUpper(c)+"_")
 	}
 	defer func() {
 		for _, c := range alpha {
@@ -1106,17 +1098,16 @@ $E_$X$C$E$P$T$E$U$R $S$I$N$T $O$C$C$A$E$C$A$T $C$U$P$I$D$A$T$A$T $N$O$N $P$R$O$I
 }
 
 func TestRandomText_AllowedPrefixes(t *testing.T) {
+	alpha := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-	var alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-	var input = strings.TrimSpace(`
+	input := strings.TrimSpace(`
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
 Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
 Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
 Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 `)
 
-	var template = strings.TrimSpace(`
+	template := strings.TrimSpace(`
 $L_$O$R$E$M $I$P$S$U$M $D$O$L$O$R $S$I$T $A$M$E$T, $C$O$N$S$E$C$T$E$T$U$R $A$D$I$P$I$S$C$I$N$G $E$L$I$T, $S$E$D $D$O $E$I$U$S$M$O$D $T$E$M$P$O$R $I$N$C$I$D$I$D$U$N$T $U$T $L$A$B$O$R$E $E$T $D$O$L$O$R$E $M$A$G$N$A $A$L$I$Q$U$A. 
 $U_$T $E$N$I$M $A$D $M$I$N$I$M $V$E$N$I$A$M, $Q$U$I$S $N$O$S$T$R$U$D $E$X$E$R$C$I$T$A$T$I$O$N $U$L$L$A$M$C$O $L$A$B$O$R$I$S $N$I$S$I $U$T $A$L$I$Q$U$I$P $E$X $E$A $C$O$M$M$O$D$O $C$O$N$S$E$Q$U$A$T. 
 $D_$U$I$S $A$U$T$E $I$R$U$R$E $D$O$L$O$R $I$N $R$E$P$R$E$H$E$N$D$E$R$I$T $I$N $V$O$L$U$P$T$A$T$E $V$E$L$I$T $E$S$S$E $C$I$L$L$U$M $D$O$L$O$R$E $E$U $F$U$G$I$A$T $N$U$L$L$A $P$A$R$I$A$T$U$R. 

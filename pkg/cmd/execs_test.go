@@ -8,7 +8,7 @@ import (
 )
 
 // Cross-platform helper to get a command
-func getCommand(command string, args []string) (string, []string) {
+func getCommand(command string, args []string) (c string, a []string) {
 	if runtime.GOOS == "windows" {
 		// Adjust commands for Windows
 		switch command {
@@ -81,7 +81,6 @@ func TestExecWithStdin(t *testing.T) {
 
 		// Execute the command
 		result, err := ExecWithStdin(command, input, args...)
-
 		// Validate error (should not fail because the command exits with 0)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
@@ -123,7 +122,6 @@ func TestExecWithStdin(t *testing.T) {
 }
 
 func TestExecWithLargeInput(t *testing.T) {
-
 	// Generate a large input string
 	var largeInput strings.Builder
 	for i := 0; i < 1000000; i++ { // 1 million lines
@@ -132,7 +130,6 @@ func TestExecWithLargeInput(t *testing.T) {
 
 	// Execute the command with the large input
 	result, err := ExecWithStdin("cat", []byte(largeInput.String()))
-
 	// Validate that the command executed successfully
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)

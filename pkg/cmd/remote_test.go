@@ -8,11 +8,10 @@ import (
 )
 
 func TestReadRemote(t *testing.T) {
-
 	t.Run("Successful Request", func(t *testing.T) {
 		mockHTTPResponse := "Remote file content"
 		http.DefaultClient = &http.Client{
-			Transport: roundTripper(func(req *http.Request) *http.Response {
+			Transport: roundTripper(func(_ *http.Request) *http.Response {
 				return &http.Response{
 					StatusCode: 200,
 					Body:       io.NopCloser(strings.NewReader(mockHTTPResponse)),
@@ -30,7 +29,7 @@ func TestReadRemote(t *testing.T) {
 
 	t.Run("Failed Request", func(t *testing.T) {
 		http.DefaultClient = &http.Client{
-			Transport: roundTripper(func(req *http.Request) *http.Response {
+			Transport: roundTripper(func(_ *http.Request) *http.Response {
 				return &http.Response{
 					StatusCode: 404,
 					Body:       io.NopCloser(strings.NewReader("Not Found")),
