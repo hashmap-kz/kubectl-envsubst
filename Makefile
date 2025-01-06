@@ -52,7 +52,7 @@ test-integration: install kind-setup
 # Run integration tests for the 'main' function
 .PHONY: test-integration-cmd
 test-integration-cmd: install kind-setup
-	KUBECTL_ENVSUBST_INTEGRATION_TESTS_AVAILABLE=0xcafebabe go test -v cmd/*.go
+	KUBECTL_ENVSUBST_INTEGRATION_TESTS_AVAILABLE=0xcafebabe go test -v cmd/app/*.go
 	$(MAKE) kind-teardown
 
 # Lint the code

@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"io"
@@ -81,7 +81,7 @@ data:
 	os.Stdout = stdoutFile
 
 	// Run application
-	err = runApp()
+	err = RunApp()
 	if err != nil {
 		t.Fatal(err)
 	}
