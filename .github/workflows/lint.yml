@@ -34,7 +34,3 @@ jobs:
         with:
           version: v1.62.2
           skip-cache: true
-
-      - name: Lint
-        if: runner.os == 'Linux'
-        run: make lint

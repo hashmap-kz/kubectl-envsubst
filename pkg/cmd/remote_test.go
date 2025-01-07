@@ -1,51 +1,77 @@
 package cmd
 
 import (
-	"io"
+	"fmt"
 	"net/http"
-	"strings"
+	"net/http/httptest"
 	"testing"
 )
 
-func TestReadRemote(t *testing.T) {
-	t.Run("Successful Request", func(t *testing.T) {
-		mockHTTPResponse := "Remote file content"
-		http.DefaultClient = &http.Client{
-			Transport: roundTripper(func(_ *http.Request) *http.Response {
-				return &http.Response{
-					StatusCode: 200,
-					Body:       io.NopCloser(strings.NewReader(mockHTTPResponse)),
+func TestReadRemoteFileContent(t *testing.T) {
+	tests := []struct {
+		name         string
+		inputURL     string
+		mockResponse string
+		statusCode   int
+		wantError    bool
+	}{
+		{
+			name:         "Valid URL and HTTP response",
+			inputURL:     "http://example.com/test",
+			mockResponse: "file content",
+			statusCode:   http.StatusOK,
+			wantError:    false,
+		},
+		{
+			name:      "Invalid URL - malformed",
+			inputURL:  ":invalid-url",
+			wantError: true,
+		},
+		{
+			name:      "Invalid URL - missing host",
+			inputURL:  "http:///test",
+			wantError: true,
+		},
+		{
+			name:       "Non-200 HTTP status code",
+			inputURL:   "http://example.com/notfound",
+			statusCode: http.StatusNotFound,
+			wantError:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a mock HTTP server
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(tt.statusCode)
+				fmt.Fprint(w, tt.mockResponse)
+			}))
+			defer server.Close()
+
+			// Replace the input URL with the mock server's URL if statusCode is set
+			inputURL := tt.inputURL
+			if tt.statusCode != 0 {
+				inputURL = server.URL
+			}
+
+			// Call the function under test
+			got, err := ReadRemoteFileContent(inputURL)
+
+			// Check for errors
+			if tt.wantError {
+				if err == nil {
+					t.Errorf("Expected an error but got none")
 				}
-			}),
-		}
-		result, err := ReadRemoteFileContent("http://example.com/data")
-		if err != nil {
-			t.Fatalf("Unexpected error: %v", err)
-		}
-		if string(result) != mockHTTPResponse {
-			t.Errorf("Expected: %s, Got: %s", mockHTTPResponse, string(result))
-		}
-	})
-
-	t.Run("Failed Request", func(t *testing.T) {
-		http.DefaultClient = &http.Client{
-			Transport: roundTripper(func(_ *http.Request) *http.Response {
-				return &http.Response{
-					StatusCode: 404,
-					Body:       io.NopCloser(strings.NewReader("Not Found")),
+			} else {
+				if err != nil {
+					t.Errorf("Did not expect an error but got one: %v", err)
 				}
-			}),
-		}
-		_, err := ReadRemoteFileContent("http://example.com/not-found")
-		if err == nil {
-			t.Error("Expected error but got none")
-		}
-	})
-}
-
-// Helper for mocking http.Client
-type roundTripper func(req *http.Request) *http.Response
-
-func (f roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	return f(req), nil
+				// Verify the response content
+				if string(got) != tt.mockResponse {
+					t.Errorf("Expected response %q, got %q", tt.mockResponse, got)
+				}
+			}
+		})
+	}
 }
