@@ -21,6 +21,14 @@ jobs:
       - name: Run unit tests
         run: make test
 
+      - name: Generate coverage report
+        run: make test-cov
+
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
       # Note: makefile stages: build/install/kind-setup/test-integration
       - name: Run integration tests
         run: make test-integration
