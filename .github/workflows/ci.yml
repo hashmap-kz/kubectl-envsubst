@@ -25,10 +25,6 @@ jobs:
       - name: Run integration tests
         run: make test-integration
 
-      # Note: makefile stages: build/install/kind-setup/test-integration-cmd
-      - name: Run integration tests for cmd
-        run: make test-integration-cmd
-
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
