@@ -66,14 +66,6 @@ _A `kubectl` plugin for substituting environment variables in Kubernetes manifes
    ```bash
    kubectl envsubst --version
    ```
-4. Example installation script for Unix-based systems (requires curl and jq):
-   ```bash
-   os="linux" # linux,darwin
-   ar="amd64" # amd64,arm64
-   tg="$(curl -s https://api.github.com/repos/hashmap-kz/kubectl-envsubst/releases/latest | jq -r .tag_name)"
-   curl -L "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/${tg}/kubectl-envsubst_${tg}_${os}_${ar}.tar.gz" | \
-     tar -xzf - -C /usr/local/bin && chmod +x /usr/local/bin/kubectl-envsubst
-   ```
 
 ---
 
@@ -316,12 +308,13 @@ The CI/CD stage may look like this:
 deploy:
   stage: deploy
   before_script:
-    - apk update && apk add --no-cache bash curl
+    - apk update && apk add --no-cache bash curl jq
     # setup kubectl
     - curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl \
       && chmod +x ./kubectl && cp ./kubectl /usr/local/bin
-    # setup kubectl-envsubst plugin
-    - curl -L "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/v1.0.20/kubectl-envsubst_v1.0.20_linux_amd64.tar.gz" | \
+    # setup kubectl-envsubst plugin (using latest release tag)
+    - tg="$(curl -s https://api.github.com/repos/hashmap-kz/kubectl-envsubst/releases/latest | jq -r .tag_name)" && \
+      curl -L "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/${tg}/kubectl-envsubst_${tg}_linux_amd64.tar.gz" | \
       tar -xzf - -C /usr/local/bin && chmod +x /usr/local/bin/kubectl-envsubst
   tags:
     - dind
