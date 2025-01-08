@@ -51,7 +51,7 @@ func TestEnvsubstIntegration_SubstApplyFromStdinWithLargeContent(t *testing.T) {
 
 	// Prepare input manifest
 	sb := strings.Builder{}
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 500; i++ {
 		sb.WriteString(fmt.Sprintf(resourceTemplateForStdin, i))
 	}
 	manifest := sb.String()
@@ -67,8 +67,8 @@ func TestEnvsubstIntegration_SubstApplyFromStdinWithLargeContent(t *testing.T) {
 
 	expectResources := []string{
 		"configmap/cm-000",
-		"configmap/cm-050",
-		"configmap/cm-089",
+		"configmap/cm-250",
+		"configmap/cm-410",
 	}
 
 	for _, er := range expectResources {
