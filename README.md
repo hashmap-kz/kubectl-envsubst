@@ -19,8 +19,6 @@ _A `kubectl` plugin for substituting environment variables in Kubernetes manifes
     - [Using Krew](#using-krew)
     - [Manual Installation](#manual-installation)
 - [Flags](#flags)
-    - [Configure Using Command-Line Flags](#1-configure-using-command-line-flags)
-    - [Configure Using Environment Variables](#2-configure-using-environment-variables)
 - [Usage](#usage-examples)
     - [Basic Usage](#basic-substitution-example)
     - [Substitution Along with Other `kubectl apply` Options](#substitution-along-with-other-kubectl-apply-options)
@@ -73,53 +71,43 @@ _A `kubectl` plugin for substituting environment variables in Kubernetes manifes
 
 ## **Flags**:
 
-### **1. Configure Using Command-Line Flags**
-
-#### `--envsubst-allowed-vars`
+### **`--envsubst-allowed-vars`**
 
 - **Description**: Specifies a comma-separated list of variable names that are explicitly allowed for substitution.
+- **Corresponding environment variable**: **`ENVSUBST_ALLOWED_VARS`**
 - **Usage**:
   ```bash
+  # Using CLI options
   kubectl envsubst apply -f deployment.yaml \
-    --envsubst-allowed-vars=HOME,USER,PKEY_PATH,DB_PASS,IMAGE_NAME,IMAGE_TAG
+    --envsubst-allowed-vars=IMAGE_NAME,IMAGE_TAG,APP_NAME,PKEY_PATH
+  
+  # Using environment variables
+  export ENVSUBST_ALLOWED_VARS='IMAGE_NAME,IMAGE_TAG,APP_NAME,PKEY_PATH'
+  kubectl envsubst apply -f deployment.yaml  
   ```
 - **Behavior**:
     - Variables not included in this list will not be substituted.
     - Useful for ensuring only specific variables are processed, preventing accidental substitutions.
 
-#### `--envsubst-allowed-prefixes`
+---
+
+### **`--envsubst-allowed-prefixes`**
 
 - **Description**: Specifies a comma-separated list of prefixes to filter variables by name.
+- **Corresponding environment variable**: **`ENVSUBST_ALLOWED_PREFIXES`**
 - **Usage**:
   ```bash
+  # Using CLI options
   kubectl envsubst apply -f deployment.yaml \
-    --envsubst-allowed-prefixes=APP_,CI_
+    --envsubst-allowed-prefixes=CI_,APP_,IMAGE_
+  
+  # Using environment variables
+  export ENVSUBST_ALLOWED_PREFIXES='CI_,APP_,IMAGE_'
+  kubectl envsubst apply -f deployment.yaml  
   ```
 - **Behavior**:
     - Only variables with names starting with one of the specified prefixes will be substituted.
     - Variables without matching prefixes will be ignored.
-
----
-
-### **2. Configure Using Environment Variables**
-
-#### `ENVSUBST_ALLOWED_VARS`
-
-- **Description**: Alternative way to define a list of allowed variables for substitution.
-- **Usage**:
-  ```bash
-  export ENVSUBST_ALLOWED_VARS='HOST,USER,PKEY_PATH'
-  kubectl envsubst apply -f deployment.yaml
-  ```
-
-#### `ENVSUBST_ALLOWED_PREFIXES`
-
-- **Description**: Alternative way to define a list of allowed prefixes for variable substitution.
-- **Usage**:
-  ```bash
-  export ENVSUBST_ALLOWED_PREFIXES='CI_,APP_'
-  kubectl envsubst apply -f deployment.yaml
-  ```
 
 ---
 
@@ -187,33 +175,30 @@ kubectl envsubst apply --filename=deployment.yaml \
 
 ### **Substitution Along with Other `kubectl apply` Options**
 
-Configure CLI for Prefix Substitution:
-
 ```bash
+# Configure CLI for Prefix Substitution:
 export ENVSUBST_ALLOWED_PREFIXES='APP_,IMAGE_'
 ```
 
-Apply resources in dry-run mode to see the expected output before applying:
-
 ```bash
-kubectl envsubst apply -f deployment.yaml --dry-run=client -o yaml
+# Apply resources in dry-run mode to see the expected output before applying:
+kubectl envsubst apply -f deployment.yaml \
+  --dry-run=client -o yaml
 ```
 
-Recursively process all files in a directory while using dry-run mode:
-
 ```bash
-kubectl envsubst apply -f manifests/ --recursive --dry-run=client -o yaml
+# Recursively process all files in a directory while using dry-run mode:
+kubectl envsubst apply -f manifests/ --recursive \
+  --dry-run=client -o yaml
 ```
 
-Use redirection from stdin to apply the manifest:
-
 ```bash
+# Use redirection from stdin to apply the manifest:
 cat deployment.yaml | kubectl envsubst apply -f -
 ```
 
-Process and apply a manifest located on a remote server:
-
 ```bash
+# Process and apply a manifest located on a remote server:
 kubectl envsubst apply \
   -f https://raw.githubusercontent.com/user/repo/refs/heads/master/manifests/deployment.yaml
 ```
@@ -323,12 +308,13 @@ The CI/CD stage may look like this:
 deploy:
   stage: deploy
   before_script:
-    - apk update && apk add --no-cache bash curl
+    - apk update && apk add --no-cache bash curl jq
     # setup kubectl
     - curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl \
       && chmod +x ./kubectl && cp ./kubectl /usr/local/bin
-    # setup kubectl-envsubst plugin
-    - curl -L "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/v1.0.20/kubectl-envsubst_v1.0.20_linux_amd64.tar.gz" | \
+    # setup kubectl-envsubst plugin (using latest release tag)
+    - tg="$(curl -s https://api.github.com/repos/hashmap-kz/kubectl-envsubst/releases/latest | jq -r .tag_name)" && \
+      curl -L "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/${tg}/kubectl-envsubst_${tg}_linux_amd64.tar.gz" | \
       tar -xzf - -C /usr/local/bin && chmod +x /usr/local/bin/kubectl-envsubst
   tags:
     - dind
