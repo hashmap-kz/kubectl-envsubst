@@ -323,13 +323,12 @@ The CI/CD stage may look like this:
 deploy:
   stage: deploy
   before_script:
-    - apk update && apk add --no-cache bash curl jq
+    - apk update && apk add --no-cache bash curl
     # setup kubectl
-    - curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
-    - chmod +x ./kubectl
-    - cp ./kubectl /usr/local/bin
+    - curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl \
+      && chmod +x ./kubectl && cp ./kubectl /usr/local/bin
     # setup kubectl-envsubst plugin
-    - wget -O- "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/v1.0.14/kubectl-envsubst_v1.0.14_linux_amd64.tar.gz" | \
+    - curl -L "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/v1.0.20/kubectl-envsubst_v1.0.20_linux_amd64.tar.gz" | \
       tar -xzf - -C /usr/local/bin && chmod +x /usr/local/bin/kubectl-envsubst
   tags:
     - dind
@@ -338,8 +337,10 @@ deploy:
   script:
     - export APP_NAMESPACE="${CI_PROJECT_ROOT_NAMESPACE}-${CI_COMMIT_REF_NAME}"
     - export ENVSUBST_ALLOWED_PREFIXES='CI_,APP_,INFRA_,IMAGE_'
+    # create namespace, setup context
     - kubectl create ns "${APP_NAMESPACE}" --dry-run=client -oyaml | kubectl apply -f -
     - kubectl config set-context --current --namespace="${APP_NAMESPACE}"
+    # substitute and apply manifests
     - kubectl envsubst apply -f "k8s-manifests/${CI_COMMIT_REF_NAME}"
     - kubectl rollout restart deploy "${CI_PROJECT_NAME}"
 ```
