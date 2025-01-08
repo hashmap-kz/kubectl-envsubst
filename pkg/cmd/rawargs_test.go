@@ -185,6 +185,16 @@ func TestParseArgs(t *testing.T) {
 			},
 			expectedError: false,
 		},
+		{
+			name: "Valid args with unrecognized argument that looks like a short flag (3)",
+			args: []string{"-h", "-xyz", "--version"},
+			expectedResult: ArgsRawRecognized{
+				Help:    true,
+				Version: true,
+				Others:  []string{"-xyz"},
+			},
+			expectedError: false,
+		},
 	}
 
 	for _, tc := range cases {

@@ -8,6 +8,9 @@ builds:
   - id: kubectl-envsubst
     main: ./cmd/kubectl-envsubst.go
     binary: kubectl-envsubst
+    ldflags:
+      - -s -w
+      - -X github.com/hashmap-kz/kubectl-envsubst/pkg/version.Version={{.Version}}
     env:
       - CGO_ENABLED=0
     goos:
