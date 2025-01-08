@@ -19,6 +19,7 @@ type ArgsRawRecognized struct {
 	Help                  bool
 	Others                []string
 	HasStdin              bool
+	Version               bool
 }
 
 func allEmpty(values []string) bool {
@@ -93,12 +94,16 @@ func ParseArgs() (ArgsRawRecognized, error) {
 			result.EnvsubstAllowedPrefix = append(result.EnvsubstAllowedPrefix, list...)
 			i++ // Skip the next argument
 
-		// Handle recursive and help flags
+		// Handle boolean flags
+
 		case arg == "--recursive" || arg == "-R":
 			result.Recursive = true
 
 		case arg == "--help" || arg == "-h":
 			result.Help = true
+
+		case arg == "--version":
+			result.Version = true
 
 		// Handle unrecognized arguments
 		default:

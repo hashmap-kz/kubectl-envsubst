@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/hashmap-kz/kubectl-envsubst/pkg/cmd"
+	"github.com/hashmap-kz/kubectl-envsubst/pkg/version"
 )
 
 // runApp executes the plugin, with logic divided into smaller, testable components
@@ -18,8 +19,20 @@ func RunApp() error {
 		return err
 	}
 
-	// either help message, either 'apply' was not provided
-	if flags.Help || len(flags.Others) == 0 {
+	// show help message
+	if flags.Help {
+		fmt.Println(cmd.UsageMessage)
+		return nil
+	}
+
+	// show version
+	if flags.Version {
+		fmt.Println(version.Version)
+		return nil
+	}
+
+	// 'apply' was not provided
+	if len(flags.Others) == 0 {
 		fmt.Println(cmd.UsageMessage)
 		return nil
 	}
