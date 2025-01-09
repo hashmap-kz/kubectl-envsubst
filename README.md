@@ -62,7 +62,20 @@ _A `kubectl` plugin for substituting environment variables in Kubernetes manifes
 1. Download the latest binary for your platform from
    the [Releases page](https://github.com/hashmap-kz/kubectl-envsubst/releases).
 2. Place the binary in your system's `PATH` (e.g., `/usr/local/bin`).
-3. Verify installation:
+3. Example installation script for Unix-Based OS:
+   ```bash
+   (
+     set -euo pipefail
+
+     OS="$(uname | tr '[:upper:]' '[:lower:]')"
+     ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')"
+     TAG="$(curl -s https://api.github.com/repos/hashmap-kz/kubectl-envsubst/releases/latest | jq -r .tag_name)"
+
+     curl -L "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/${TAG}/kubectl-envsubst_${TAG}_${OS}_${ARCH}.tar.gz" |
+       tar -xzf - -C /usr/local/bin && chmod +x /usr/local/bin/kubectl-envsubst
+   )
+   ```
+4. Verify installation:
    ```bash
    kubectl envsubst --version
    ```
