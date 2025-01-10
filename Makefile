@@ -13,13 +13,13 @@ all: build
 # Build the binary (GOARCH=amd64 GOOS=linux; -o $(BINARY))
 .PHONY: build
 build: $(SOURCES)
-	CGO_ENABLED=0 go build -ldflags="-s -w" ./cmd/kubectl-envsubst
+	CGO_ENABLED=0 go build -ldflags="-s -w" -o bin/ ./cmd/kubectl-envsubst
 
 # Install the binary to /usr/local/bin
 .PHONY: install
 install: build
-	@echo "Installing $(BINARY) to $(INSTALL_DIR)..."
-	@install -m 0755 $(BINARY) $(INSTALL_DIR)
+	@echo "Installing bin/$(BINARY) to $(INSTALL_DIR)..."
+	@install -m 0755 bin/$(BINARY) $(INSTALL_DIR)
 
 # Run unit tests
 .PHONY: test
@@ -68,4 +68,4 @@ format:
 # Clean build artifacts
 .PHONY: clean
 clean:
-	@rm -rf $(BINARY) $(COV_REPORT)
+	@rm -rf bin/ $(COV_REPORT)

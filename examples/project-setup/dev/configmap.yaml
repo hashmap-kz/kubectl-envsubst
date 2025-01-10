@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-index
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Hello from ${PROJECT_ENV}</title>
+    </head>
+    <body>
+        <h1>Welcome to the NGINX Test Page!</h1>
+        <p>Current env: ${PROJECT_ENV}</p>
+    </body>
+    </html>
