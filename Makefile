@@ -13,7 +13,7 @@ all: build
 # Build the binary (GOARCH=amd64 GOOS=linux; -o $(BINARY))
 .PHONY: build
 build: $(SOURCES)
-	CGO_ENABLED=0 go build -ldflags="-s -w" ./cmd/$(BINARY).go
+	CGO_ENABLED=0 go build -ldflags="-s -w" ./cmd/kubectl-envsubst
 
 # Install the binary to /usr/local/bin
 .PHONY: install
@@ -47,7 +47,7 @@ kind-teardown:
 .PHONY: test-integration
 test-integration: install kind-setup
 	KUBECTL_ENVSUBST_INTEGRATION_TESTS_AVAILABLE=0xcafebabe go test -v integration/*.go
-	KUBECTL_ENVSUBST_INTEGRATION_TESTS_AVAILABLE=0xcafebabe go test -v cmd/app/*.go
+	KUBECTL_ENVSUBST_INTEGRATION_TESTS_AVAILABLE=0xcafebabe go test -v cmd/kubectl-envsubst/*.go
 	$(MAKE) kind-teardown
 
 # Lint the code
