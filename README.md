@@ -93,10 +93,10 @@ _A `kubectl` plugin for substituting environment variables in Kubernetes manifes
   # Using CLI options
   kubectl envsubst apply -f deployment.yaml \
     --envsubst-allowed-vars=IMAGE_NAME,IMAGE_TAG,APP_NAME,PKEY_PATH
-  
+
   # Using environment variables
   export ENVSUBST_ALLOWED_VARS='IMAGE_NAME,IMAGE_TAG,APP_NAME,PKEY_PATH'
-  kubectl envsubst apply -f deployment.yaml  
+  kubectl envsubst apply -f deployment.yaml
   ```
 - **Behavior**:
     - Variables not included in this list will not be substituted.
@@ -113,10 +113,10 @@ _A `kubectl` plugin for substituting environment variables in Kubernetes manifes
   # Using CLI options
   kubectl envsubst apply -f deployment.yaml \
     --envsubst-allowed-prefixes=CI_,APP_,IMAGE_
-  
+
   # Using environment variables
   export ENVSUBST_ALLOWED_PREFIXES='CI_,APP_,IMAGE_'
-  kubectl envsubst apply -f deployment.yaml  
+  kubectl envsubst apply -f deployment.yaml
   ```
 - **Behavior**:
     - Only variables with names starting with one of the specified prefixes will be substituted.
@@ -214,6 +214,11 @@ cat deployment.yaml | kubectl envsubst apply -f -
 # Process and apply a manifest located on a remote server:
 kubectl envsubst apply \
   -f https://raw.githubusercontent.com/user/repo/refs/heads/master/manifests/deployment.yaml
+```
+
+```bash
+# Using with 'kubectl kustomize'
+kubectl kustomize manifests/ | kubectl envsubst apply -f -
 ```
 
 ---
