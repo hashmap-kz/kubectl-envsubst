@@ -6,7 +6,7 @@ before:
 
 builds:
   - id: kubectl-envsubst
-    main: ./cmd/kubectl-envsubst.go
+    main: ./cmd/kubectl-envsubst
     binary: kubectl-envsubst
     ldflags:
       - -s -w
