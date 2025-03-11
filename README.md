@@ -18,7 +18,7 @@ _A `kubectl` plugin for substituting environment variables in Kubernetes manifes
 - [Installation](#installation)
     - [Using Krew](#using-krew)
     - [Manual Installation](#manual-installation)
-    - [Package-Based Installation](#installation-in-cicd-pipelines-example-for-alpine-linux)
+    - [Package-Based Installation](#package-based-installation-for-cicd-pipelines-example-for-alpine-linux)
 - [Flags](#flags)
 - [Usage](#usage-examples)
     - [Basic Usage](#basic-substitution-example)
