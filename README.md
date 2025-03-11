@@ -18,6 +18,7 @@ _A `kubectl` plugin for substituting environment variables in Kubernetes manifes
 - [Installation](#installation)
     - [Using Krew](#using-krew)
     - [Manual Installation](#manual-installation)
+    - [Package-Based Installation](#installation-in-cicd-pipelines-example-for-alpine-linux)
 - [Flags](#flags)
 - [Usage](#usage-examples)
     - [Basic Usage](#basic-substitution-example)
@@ -39,7 +40,8 @@ _A `kubectl` plugin for substituting environment variables in Kubernetes manifes
   variables.
 - **Strict Mode**: Fails if any placeholders remain unexpanded, ensuring deployment predictability.
 - **Seamless Integration**: Works with all `kubectl` arguments, that may be used in `apply`.
-- **Zero Dependencies**: No external tools or libraries are required, simplifying installation and operation.
+- **Zero Dependencies**: No external tools or libraries are required, simplifying installation and operation. The plugin
+  is designed primarily for CI/CD, with a focus on minimizing binary size.
 
 ---
 
@@ -79,6 +81,14 @@ _A `kubectl` plugin for substituting environment variables in Kubernetes manifes
    ```bash
    kubectl envsubst --version
    ```
+
+### Package-Based Installation (for CI/CD pipelines, example for Alpine-Linux)
+
+```bash
+apk update && apk add --no-cache bash curl
+curl -LO https://github.com/hashmap-kz/kubectl-envsubst/releases/latest/download/kubectl-envsubst_linux_amd64.apk
+apk add kubectl-envsubst_linux_amd64.apk --allow-untrusted
+```
 
 ---
 
