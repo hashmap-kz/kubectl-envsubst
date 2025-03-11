@@ -326,14 +326,13 @@ The CI/CD stage may look like this:
 deploy:
   stage: deploy
   before_script:
-    - apk update && apk add --no-cache bash curl jq
+    - apk update && apk add --no-cache bash curl
     # setup kubectl
-    - curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl \
-      && chmod +x ./kubectl && cp ./kubectl /usr/local/bin
-    # setup kubectl-envsubst plugin (using latest release tag)
-    - tg="$(curl -s https://api.github.com/repos/hashmap-kz/kubectl-envsubst/releases/latest | jq -r .tag_name)" && \
-      curl -L "https://github.com/hashmap-kz/kubectl-envsubst/releases/download/${tg}/kubectl-envsubst_${tg}_linux_amd64.tar.gz" | \
-      tar -xzf - -C /usr/local/bin && chmod +x /usr/local/bin/kubectl-envsubst
+    - curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+    - chmod +x ./kubectl && cp ./kubectl /usr/local/bin
+    # setup kubectl-envsubst plugin (using latest release and *.apk package)
+    - curl -LO https://github.com/hashmap-kz/kubectl-envsubst/releases/latest/download/kubectl-envsubst_linux_amd64.apk
+    - apk add kubectl-envsubst_linux_amd64.apk --allow-untrusted
   tags:
     - dind
   environment:
